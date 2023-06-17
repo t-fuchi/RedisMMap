@@ -3,6 +3,7 @@
 
 ## Install
 ```
+$ cd RedisMMap/src
 $ make
 $ mv fmmap.so /{your_redis_path}/
 $ echo enable-module-command yes >> redis.conf
