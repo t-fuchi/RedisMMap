@@ -5,6 +5,7 @@
 ```
 $ make
 $ mv fmmap.so /{your_redis_path}/
+$ echo enable-module-command yes >> redis.conf
 $ echo loadmodule /{your_redis_path}/fmmap.so >> redis.conf
 $ redis-server redis.conf
 ```
