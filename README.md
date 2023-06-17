@@ -15,24 +15,24 @@ $ redis-server redis.conf
 MMAP key file_path value_type [value_size] [writable]
 
 // clear contents in key (trancate file_path)
-MCLEAR key
+VCLEAR key
 
 // keyにvalueを追加する
-MADD key value [value ...]
+VADD key value [value ...]
 
 // keyからindex位置にある値を取得する
-MGET key index
+VGET key index
 
 // keyから複数のindex位置にある値を取得する
-MMGET key index [index ...]
+VMGET key index [index ...]
 
 // keyのindex位置に値を書き込む
-MSET key index value [index value ...]
+VSET key index value [index value ...]
 
 // keyの値の数を取得する
-MSIZE key
+VSIZE key
 
 // keyの最後の値を取得して削除する
-MPOP key
+VPOP key
 ```
 
