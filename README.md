@@ -1,6 +1,14 @@
 # RedisMMap
  mmap module for redis
 
+## Install
+```
+$ make
+$ mv fmmap.so /{your_redis_path}/
+$ echo loadmodule /{your_redis_path}/fmmap.so >> redis.conf
+$ redis-server redis.conf
+```
+## Usage
 ```
 // mmap file_path to key
 // value_type is int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, long double or string
