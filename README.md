@@ -17,22 +17,22 @@ MMAP key file_path value_type [value_size] [writable]
 // clear contents in key (trancate file_path)
 VCLEAR key
 
-// keyにvalueを追加する
+// add value at the end of key
 VADD key value [value ...]
 
-// keyからindex位置にある値を取得する
+// get value from key at index
 VGET key index
 
-// keyから複数のindex位置にある値を取得する
+// get values from key at indices
 VMGET key index [index ...]
 
-// keyのindex位置に値を書き込む
+// set value at index in key
 VSET key index value [index value ...]
 
-// keyの値の数を取得する
+// get the count of items in key
 VSIZE key
 
-// keyの最後の値を取得して削除する
+// pop the last value in key
 VPOP key
 ```
 
