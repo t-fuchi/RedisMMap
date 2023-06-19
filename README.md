@@ -2,7 +2,7 @@
  mmap module for redis
 
 ## Install
-[Install Redis](https://redis.io/docs/getting-started/installation)
+Install Redis [Instruction](https://redis.io/docs/getting-started/installation)
 ```
 $ cd RedisMMap/src
 $ make
