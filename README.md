@@ -54,5 +54,5 @@ VPOP key
 
 // get file_path which is mapped for key
 // return file_path
-VINFO key
+VPATH key
 ```
