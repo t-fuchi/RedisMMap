@@ -52,7 +52,7 @@ VSIZE key
 // return the last value
 VPOP key
 
-// get file_path which is mapped for key
-// return file_path
-VPATH key
+// get file path which is mapped for key
+// return file path
+VFILEPATH key
 ```
