@@ -49,5 +49,10 @@ VSET key index value [index value ...]
 VSIZE key
 
 // pop the last value in key
+// return the last value
 VPOP key
+
+// get file_path which is mapped for key
+// return file_path
+VINFO key
 ```
