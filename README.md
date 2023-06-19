@@ -31,6 +31,9 @@ VGET key index
 // get values from key at indices
 VMGET key index [index ...]
 
+// get all values from key
+VALL key
+
 // set value at index in key
 VSET key index value [index value ...]
 
