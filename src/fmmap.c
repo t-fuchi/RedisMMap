@@ -225,7 +225,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / obj_ptr->value_size);
 }
 
-// MGET key index
+// VGET key index
 int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -300,7 +300,7 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 
-// MMGET key index [index ...]
+// VMGET key index [index ...]
 int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -331,57 +331,238 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   }
 
   RedisModule_ReplyWithArray(ctx, argc - 2);
-  for (int i = 2; i < argc; i++) {
-    RedisModule_StringToLongLong(argv[i], &index);
-    if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
-      RedisModule_ReplyWithNull(ctx);
-    }
-    else {
-      if (strcasecmp(obj_ptr->value_type, "int8") == 0) {
+  if (strcasecmp(obj_ptr->value_type, "int8") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((int8_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "uint8") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint8") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((uint8_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "int16") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int16") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((int16_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "uint16") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint16") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((uint16_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "int32") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int32") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((int32_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "uint32") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint32") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((uint32_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "int64") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int64") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((int64_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "uint64") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint64") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongLong(ctx, ((uint64_t*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "float") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "float") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithDouble(ctx, ((float*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         RedisModule_ReplyWithLongDouble(ctx, ((long double*)obj_ptr->mmap)[index]);
       }
-      else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
+    for (int i = 2; i < argc; i++) {
+      RedisModule_StringToLongLong(argv[i], &index);
+      if (obj_ptr->file_size < (size_t)index * obj_ptr->value_size || index < 0) {
+        RedisModule_ReplyWithNull(ctx);
+      }
+      else {
         char buffer[0x100] = {0};
         snprintf(buffer, obj_ptr->value_size, "%s", (char *)obj_ptr->mmap + index * obj_ptr->value_size);
         RedisModule_ReplyWithStringBuffer(ctx, buffer, strlen(buffer));
       }
-      else RedisModule_ReplyWithNull(ctx);
     }
   }
+  else return REDISMODULE_ERR;
+
   return REDISMODULE_OK;
 }
 
-// MSET key index value [index value ...]
+// VALL key
+int VAll_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+{
+  RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
+  if (argc != 2) return RedisModule_WrongArity(ctx);
+
+  RedisModuleKey *key =
+      RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+  int type = RedisModule_KeyType(key);
+  if (type != REDISMODULE_KEYTYPE_EMPTY &&
+      RedisModule_ModuleTypeGetType(key) != MMapType) {
+    return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+  }
+
+  if (type == REDISMODULE_KEYTYPE_EMPTY) {
+    return RedisModule_ReplyWithError(ctx, "You must do MMAP first.");
+  }
+
+  MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
+  if (obj_ptr == NULL) {
+    return REDISMODULE_ERR;
+  }
+
+  RedisModule_ReplyWithArray(ctx, obj_ptr->file_size / obj_ptr->value_size);
+
+  if (strcasecmp(obj_ptr->value_type, "int8") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((int8_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint8") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((uint8_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int16") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((int16_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint16") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((uint16_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int32") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((int32_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint32") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((uint32_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "int64") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((int64_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "uint64") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongLong(ctx, ((uint64_t*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "float") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithDouble(ctx, ((float*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      RedisModule_ReplyWithLongDouble(ctx, ((long double*)obj_ptr->mmap)[index]);
+    }
+  }
+  else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
+    for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
+      char buffer[0x100] = {0};
+      snprintf(buffer, obj_ptr->value_size, "%s", (char *)obj_ptr->mmap + index * obj_ptr->value_size);
+      RedisModule_ReplyWithStringBuffer(ctx, buffer, strlen(buffer));
+    }
+  }
+  else return REDISMODULE_ERR;
+
+  return REDISMODULE_OK;
+}
+
+// VSET key index value [index value ...]
 int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -600,7 +781,7 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 }
 
 
-// MADD key value [value ...]
+// VADD key value [value ...]
 int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -867,7 +1048,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, argc - 2);
 }
 
-// MSIZE key
+// VSIZE key
 int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -893,7 +1074,7 @@ int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / obj_ptr->value_size);
 }
 
-// MCLEAR key
+// VCLEAR key
 int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -927,7 +1108,7 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 
-// MPOP key
+// VPOP key
 int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
@@ -1196,28 +1377,31 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   MMapType = RedisModule_CreateDataType(ctx, "FuchiMMap", 0, &tm);
   if (MMapType == NULL) return REDISMODULE_ERR;
 
-  // MMAP key file_path value_type [value_size] [writable]
+  // VMAP key file_path value_type [value_size] [writable]
   CREATE_CMD("MMAP", MMap_RedisCommand, "write fast", 1, 1);
 
-  // MCLEAR key
+  // VCLEAR key
   CREATE_CMD("VCLEAR", VClear_RedisCommand, "write fast", 1, 1);
 
-  // MADD key value [value ...]
+  // VADD key value [value ...]
   CREATE_CMD("VADD", VAdd_RedisCommand, "write fast", 1, 1);
 
-  // MGET key index
+  // VGET key index
   CREATE_CMD("VGET", VGet_RedisCommand, "readonly fast", 1, 1);
 
-  // MGET key index [index ...]
+  // VMGET key index [index ...]
   CREATE_CMD("VMGET", VMGet_RedisCommand, "readonly fast", 1, 1);
 
-  // MSET key index value [index value ...]
+  // VALL key
+  CREATE_CMD("VALL", VAll_RedisCommand, "readonly fast", 1, 1);
+
+  // VSET key index value [index value ...]
   CREATE_CMD("VSET", VSet_RedisCommand, "write fast", 1, 1);
 
-  // MSIZE key
+  // VSIZE key
   CREATE_CMD("VSIZE", VSize_RedisCommand, "readonly fast", 1, 1);
 
-  // MPOP key
+  // VPOP key
   CREATE_CMD("VPOP", VPop_RedisCommand, "write fast", 1, 1);
 
   return REDISMODULE_OK;
