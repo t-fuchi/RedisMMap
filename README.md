@@ -2,13 +2,14 @@
  mmap module for redis
 
 ## Install
+[Install Redis](https://redis.io/docs/getting-started/installation)
 ```
 $ cd RedisMMap/src
 $ make
 $ mv fmmap.so /{your_redis_path}/
-$ echo enable-module-command yes >> redis.conf
-$ echo loadmodule /{your_redis_path}/fmmap.so >> redis.conf
-$ redis-server redis.conf
+$ echo enable-module-command yes >> /etc/redis/redis.conf
+$ echo loadmodule /{your_redis_path}/fmmap.so >> /etc/redis/redis.conf
+$ service redis-server start
 ```
 ## Usage
 ```
@@ -37,4 +38,3 @@ VSIZE key
 // pop the last value in key
 VPOP key
 ```
-
