@@ -31,7 +31,7 @@ VADD key value [value ...]
 VPOP key
 
 // keyの値の数を取得する
-VSIZE key
+VCOUNT key
 
 // keyの内容を消去する
 VCLEAR key
@@ -358,8 +358,8 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 ```python
 %%writefile -a fmmap.c
 
-// VSIZE key
-int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+// VCOUNT key
+int VCount_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
 
@@ -562,8 +562,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   // VSET key index value [index value ...]
   CREATE_CMD("VSET", VSet_RedisCommand, "write fast", 1, 1);
 
-  // VSIZE key
-  CREATE_CMD("VSIZE", VSize_RedisCommand, "readonly fast", 1, 1);
+  // VCOUNT key
+  CREATE_CMD("VCOUNT", VCount_RedisCommand, "readonly fast", 1, 1);
 
   // VPOP key
   CREATE_CMD("VPOP", VPop_RedisCommand, "write fast", 1, 1);
@@ -720,7 +720,7 @@ vadd db 0.6
 vadd db 0.7
 vadd db 0.8
 vadd db 0.9
-vsize db
+vcount db
 ```
 
 実行すると、登録数が10になっているのがわかります。
@@ -804,10 +804,10 @@ vsize db
 
 
 ```python
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
 !echo "VGET db 15" | redis-cli
 !echo "VPOP db" | redis-cli
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
 ```
 
     (integer) 16
@@ -828,7 +828,7 @@ Redisを停止して再起動します。
 
 
 ```python
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
 ```
 
     (integer) 15
@@ -860,7 +860,7 @@ dbを削除しても再度マッピングすればファイルは元のままな
 
 ```python
 !echo "VCLEAR dba" | redis-cli
-!echo "VSIZE dba" | redis-cli
+!echo "VCOUNT dba" | redis-cli
 ```
 
     (integer) 15
@@ -903,7 +903,7 @@ with open('/content/db/file.mmap', 'wb') as fout:
 
 ```python
 !echo "mmap db /content/db/file.mmap" | redis-cli
-!echo "vsize db" | redis-cli
+!echo "vcount db" | redis-cli
 !echo "vmget db 1 3 5 7 9" | redis-cli
 ```
 

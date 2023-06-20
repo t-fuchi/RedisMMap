@@ -1055,8 +1055,8 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, argc - 2);
 }
 
-// VSIZE key
-int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+// VCOUNT key
+int VCount_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
   if (argc != 2) return RedisModule_WrongArity(ctx);
@@ -1140,6 +1140,58 @@ int VFilePath_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
   }
 
   return RedisModule_ReplyWithCString(ctx, obj_ptr->file_path);
+}
+
+// VTYPE key
+int VType_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+{
+  RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
+  if (argc != 2) return RedisModule_WrongArity(ctx);
+
+  RedisModuleKey *key =
+      RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+  int type = RedisModule_KeyType(key);
+  if (type != REDISMODULE_KEYTYPE_EMPTY &&
+      RedisModule_ModuleTypeGetType(key) != MMapType) {
+    return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+  }
+
+  if (type == REDISMODULE_KEYTYPE_EMPTY) {
+    return RedisModule_ReplyWithError(ctx, "You must do MMAP first.");
+  }
+
+  MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
+  if (obj_ptr == NULL) {
+    return RedisModule_ReplyWithNull(ctx);
+  }
+
+  return RedisModule_ReplyWithCString(ctx, obj_ptr->value_type);
+}
+
+// VSIZE key
+int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+{
+  RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
+  if (argc != 2) return RedisModule_WrongArity(ctx);
+
+  RedisModuleKey *key =
+      RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
+  int type = RedisModule_KeyType(key);
+  if (type != REDISMODULE_KEYTYPE_EMPTY &&
+      RedisModule_ModuleTypeGetType(key) != MMapType) {
+    return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
+  }
+
+  if (type == REDISMODULE_KEYTYPE_EMPTY) {
+    return RedisModule_ReplyWithError(ctx, "You must do MMAP first.");
+  }
+
+  MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
+  if (obj_ptr == NULL) {
+    return RedisModule_ReplyWithNull(ctx);
+  }
+
+  return RedisModule_ReplyWithLongLong(ctx, obj_ptr->value_size);
 }
 
 // VPOP key
@@ -1438,14 +1490,20 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   // VSET key index value [index value ...]
   CREATE_CMD("VSET", VSet_RedisCommand, "write fast", 1, 1);
 
-  // VSIZE key
-  CREATE_CMD("VSIZE", VSize_RedisCommand, "readonly fast", 1, 1);
+  // VCOUNT key
+  CREATE_CMD("VCOUNT", VCount_RedisCommand, "readonly fast", 1, 1);
 
   // VPOP key
   CREATE_CMD("VPOP", VPop_RedisCommand, "write fast", 1, 1);
 
   // VFILEPATH key
   CREATE_CMD("VFILEPATH", VFilePath_RedisCommand, "readonly fast", 1, 1);
+
+  // VTYPE key
+  CREATE_CMD("VTYPE", VType_RedisCommand, "readonly fast", 1, 1);
+
+  // VSIZE key
+  CREATE_CMD("VSIZE", VSize_RedisCommand, "readonly fast", 1, 1);
 
   return REDISMODULE_OK;
 }

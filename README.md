@@ -46,7 +46,7 @@ VSET key index value [index value ...]
 
 // get number of elements in key
 // return number of values
-VSIZE key
+VCOUNT key
 
 // pop the last value in key
 // return the last value
@@ -55,4 +55,13 @@ VPOP key
 // get file path which is mapped for key
 // return file path
 VFILEPATH key
+
+// get value type for key (int8, uint32, etc)
+// return value type
+VTYPE key
+
+// get value size for key (int8:1, uint32:4, etc)
+// return value size
+VSIZE key
+
 ```
