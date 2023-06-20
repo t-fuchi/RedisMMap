@@ -103,9 +103,6 @@ static inline int mstringcmp(const RedisModuleString *rs1, const char *s2)
 int ftruncate(int fildes, off_t length); // unistd.hにあるはずだがwarningが出るので
 ```
 
-    Writing fmmap.c
-
-
 MMapObjectを定義します。mmapに必要な情報を詰め込みました。sdsはRedis内で使われる文字列型です。
 
 
@@ -121,9 +118,6 @@ typedef struct _MMapObject
 } MMapObject;
 ```
 
-    Appending to fmmap.c
-
-
 MMap型を保持する変数と、MMapObjectを生成する関数です。
 
 
@@ -138,9 +132,6 @@ MMapObject *MCreateObject(void)
   return (MMapObject *)zcalloc(sizeof(MMapObject));
 }
 ```
-
-    Appending to fmmap.c
-
 
 MMapObjectを解放する関数です。
 
@@ -159,9 +150,6 @@ void MFree(void *value)
   zfree(value);
 }
 ```
-
-    Appending to fmmap.c
-
 
 file_pathで指定したファイルをkeyにマッピングする関数です。S_IWRITEとS_IREADはsys/stat.hに定義されているはずなのですが、Colabでは未定義になるのでここで定義しています。
 
@@ -223,9 +211,6 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
-    Appending to fmmap.c
-
-
 indexで指定する位置の値を取得する関数です。
 
 
@@ -256,9 +241,6 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
-
-    Appending to fmmap.c
-
 
 複数のindexで示した位置の値を取得する関数です。
 
@@ -292,9 +274,6 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
-
-    Appending to fmmap.c
-
 
 indexで示した位置に値を書き込む関数です。
 
@@ -337,9 +316,6 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
-    Appending to fmmap.c
-
-
 ファイルの末尾に値を追加する関数です。
 
 
@@ -379,9 +355,6 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 }
 ```
 
-    Appending to fmmap.c
-
-
 ファイルに含まれる値の数を取得する関数です。
 
 
@@ -401,9 +374,6 @@ int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / sizeof(double));
 }
 ```
-
-    Appending to fmmap.c
-
 
 ファイルの内容を消去する関数です。
 
@@ -430,9 +400,6 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
-
-    Appending to fmmap.c
-
 
 ファイルの末尾から数値を取得して、削除する関数です。
 
@@ -465,9 +432,6 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 }
 ```
 
-    Appending to fmmap.c
-
-
 RedisのRDBファイルにmmapに関する情報を保存する関数です。
 
 
@@ -481,9 +445,6 @@ void MRdbSave(RedisModuleIO *rdb, void *value)
   msync(obj_ptr->mmap, obj_ptr->file_size, MS_ASYNC);
 }
 ```
-
-    Appending to fmmap.c
-
 
 RedisのRDBファイルからmmapに関する情報を読み出す関数です。
 
@@ -505,9 +466,6 @@ void *MRdbLoad(RedisModuleIO *rdb, int encver)
   return obj_ptr;
 }
 ```
-
-    Appending to fmmap.c
-
 
 RedisのAOFを利用するための関数です。
 
@@ -531,9 +489,6 @@ void MAofRewrite(RedisModuleIO *aof, RedisModuleString *key, void *value)
 }
 ```
 
-    Appending to fmmap.c
-
-
 その他、Redisのモジュールに必要な関数です。
 
 
@@ -553,9 +508,6 @@ void MDigest(RedisModuleDigest *md, void *value)
 }
 ```
 
-    Appending to fmmap.c
-
-
 Redisのコマンドを作成するマクロ
 
 
@@ -571,9 +523,6 @@ Redisのコマンドを作成するマクロ
   } while (0);
 
 ```
-
-    Appending to fmmap.c
-
 
 モジュールのロード時に呼ばれて、モジュールを準備する関数です。ここで各コマンドとそれを実行する関数を結びつけます。
 
@@ -627,9 +576,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
-    Appending to fmmap.c
-
-
 ソースをビルドするためのMakefileです。
 
 
@@ -655,9 +601,6 @@ clean:
 	rm -rf *.xo *.so
 ```
 
-    Writing Makefile.fmmap
-
-
 モジュールをmakeします。
 
 
@@ -665,11 +608,6 @@ clean:
 !make -f Makefile.fmmap
 !ls fmmap.so
 ```
-
-    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c fmmap.c -o fmmap.xo
-    ld -o fmmap.so fmmap.xo -shared  -lc
-    fmmap.so
-
 
 作成したモジュールを読み込めるように設定ファイルを準備します。
 
@@ -684,9 +622,6 @@ clean:
 enable-module-command yes
 loadmodule /content/redis-stable/src/modules/fmmap.so
 ```
-
-    Appending to redis.conf
-
 
 Redisをインストールします。
 
@@ -706,18 +641,12 @@ enable-module-command yes
 loadmodule /content/redis-stable/src/modules/fmmap.so
 ```
 
-    Appending to /etc/redis/redis.conf
-
-
 Redisを実行します。
 
 
 ```python
 !service redis-server start
 ```
-
-    Starting redis-server: redis-server.
-
 
 Redisが実行されているか確認します。
 
@@ -796,9 +725,6 @@ vadd db 0.8
 vadd db 0.9
 vsize db
 ```
-
-    Writing command
-
 
 実行すると、登録数が10になっているのがわかります。
 
@@ -900,10 +826,6 @@ Redisを停止して再起動します。
 !service redis-server stop
 !service redis-server start
 ```
-
-    Stopping redis-server: redis-server.
-    Starting redis-server: redis-server.
-
 
 再起動しても値は残っています。
 
