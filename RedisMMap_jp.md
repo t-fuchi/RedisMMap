@@ -151,14 +151,11 @@ void MFree(void *value)
 }
 ```
 
-file_pathで指定したファイルをkeyにマッピングする関数です。S_IWRITEとS_IREADはsys/stat.hに定義されているはずなのですが、Colabでは未定義になるのでここで定義しています。
+file_pathで指定したファイルをkeyにマッピングする関数です。
 
 
 ```python
 %%writefile -a fmmap.c
-
-#define S_IWRITE 0000200
-#define S_IREAD  0000400
 
 // MMAP key file_path
 int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
@@ -181,7 +178,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   if (type == REDISMODULE_KEYTYPE_EMPTY) {
     obj_ptr = MCreateObject();
     obj_ptr->file_path = sdsnew(RedisModule_StringPtrLen(argv[2], NULL));
-    obj_ptr->fd = open(obj_ptr->file_path, O_RDWR | O_CREAT, S_IWRITE | S_IREAD);
+    obj_ptr->fd = open(obj_ptr->file_path, O_RDWR | O_CREAT, 0666);
     if (obj_ptr->fd == -1) {
         MFree(obj_ptr);
         return RedisModule_ReplyWithError(ctx, sdsnew(RedisModule_StringPtrLen(argv[2], NULL)));

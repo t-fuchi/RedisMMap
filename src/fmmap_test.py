@@ -32,7 +32,10 @@ def test_vadd_int32(scope_module):
     assert r.execute_command('vfilepath db') == b'file.mmap'
     assert r.execute_command('vset db 1 -2 2 -4') == 2
     assert r.execute_command('vall db') == [b'0', b'-2', b'-4', b'6', b'8', b'10']
-    assert r.execute_command('vclear db') == 5
     assert r.execute_command('del db') == 1
+    assert r.execute_command('mmap db2 file.mmap int32') == 6
+    assert r.execute_command('vall db2') == [b'0', b'-2', b'-4', b'6', b'8', b'10']
+    assert r.execute_command('vfilepath db2') == b'file.mmap'
+    assert r.execute_command('del db2') == 1
 
 

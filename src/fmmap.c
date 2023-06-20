@@ -65,7 +65,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   bool writable = false;
   uint8_t value_size = 0;
   long long tmp_size;
-  for (int i = 5; i < argc; ++i) {
+  for (int i = 4; i < argc; ++i) {
     if (mstringcmp(argv[i], "writable") == 0) writable = true;
     else if (RedisModule_StringToLongLong(argv[i], &tmp_size) == REDISMODULE_OK) {
       if (tmp_size <= 0) {
@@ -180,35 +180,42 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     obj_ptr->value_size = value_size;
     obj_ptr->writable = writable;
     if (obj_ptr->writable) {
-      obj_ptr->fd = open(obj_ptr->file_path, O_CREAT | O_RDWR, S_IWRITE);
+      obj_ptr->fd = open(obj_ptr->file_path, O_RDWR | O_CREAT, 0666);
       if (obj_ptr->fd == -1) {
+        int ret = RedisModule_ReplyWithError(ctx, obj_ptr->file_path);
         MFree(obj_ptr);
-        return RedisModule_ReplyWithError(ctx, "'MMAP' command cannot open the file.");
+        return ret;
       }
     }
     else {
       obj_ptr->fd = open(obj_ptr->file_path, O_RDONLY);
       if (obj_ptr->fd == -1) {
+        int ret = RedisModule_ReplyWithError(ctx, obj_ptr->file_path);
         MFree(obj_ptr);
-        return RedisModule_ReplyWithError(ctx, "'MMAP' command cannot find the file.");
+        return ret;
       }
     }
     struct stat sb;
     if (fstat(obj_ptr->fd, &sb) == -1) {
+      int ret = RedisModule_ReplyWithError(ctx, obj_ptr->file_path);
       MFree(obj_ptr);
-      return RedisModule_ReplyWithError(ctx, "'MMAP' command cannot open the file.");
+      return ret;
     }
     obj_ptr->file_size = sb.st_size;
-    if (obj_ptr->writable) {
-      obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+    if (0 < obj_ptr->file_size) {
+      if (obj_ptr->writable) {
+        obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+      }
+      else {
+        obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, obj_ptr->fd, 0);
+      }
+      if (obj_ptr->mmap == MAP_FAILED) {
+        int ret = RedisModule_ReplyWithError(ctx, obj_ptr->file_path);
+        MFree(obj_ptr);
+        return ret;
+      }
     }
-    else {
-      obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, obj_ptr->fd, 0);
-    }
-    if (obj_ptr->mmap == MAP_FAILED) {
-      MFree(obj_ptr);
-      return RedisModule_ReplyWithError(ctx, "'MMAP' command cannot open the file.");
-    }
+    else obj_ptr->mmap = NULL;
     RedisModule_ModuleTypeSetValue(key, MMapType, obj_ptr);
   }
   else {
@@ -814,13 +821,13 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       if (RedisModule_StringToLongLong(argv[i], &value) == REDISMODULE_ERR) {
         return RedisModule_ReplyWithError(ctx, "value must be integer.");
       }
-      if (value < -INT8_MIN || INT8_MAX < value) {
+      if (value < INT8_MIN || INT8_MAX < value) {
         return RedisModule_ReplyWithError(ctx, "value must be int8.");
       }
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -841,7 +848,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -862,7 +869,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -883,7 +890,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -904,7 +911,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -925,7 +932,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -946,7 +953,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -967,7 +974,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -985,7 +992,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -1003,7 +1010,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -1021,7 +1028,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -1033,7 +1040,7 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
@@ -1101,9 +1108,9 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     return RedisModule_ReplyWithError(ctx, "The file is not writable.");
   }
 
-  munmap(obj_ptr->mmap, obj_ptr->file_size);
+  if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
   ftruncate(obj_ptr->fd, 0);
-  obj_ptr->mmap = mmap(NULL, 0, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+  obj_ptr->mmap = NULL;
   RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / obj_ptr->value_size);
   obj_ptr->file_size = 0;
   return REDISMODULE_OK;
@@ -1132,7 +1139,7 @@ int VFilePath_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     return RedisModule_ReplyWithNull(ctx);
   }
 
-  return RedisModule_ReplyWithCString(obj_ptr->file_path);
+  return RedisModule_ReplyWithCString(ctx, obj_ptr->file_path);
 }
 
 // VPOP key
@@ -1206,10 +1213,13 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       RedisModule_ReplyWithStringBuffer(ctx, buffer, strlen(buffer));
     }
     else return REDISMODULE_ERR;
-    munmap(obj_ptr->mmap, obj_ptr->file_size);
+    if (obj_ptr->mmap != NULL) munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->file_size -= obj_ptr->value_size;
     ftruncate(obj_ptr->fd, obj_ptr->file_size);
-    obj_ptr->mmap = mmap(NULL, obj_ptr->file_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+    if (0 < obj_ptr->file_size) {
+      obj_ptr->mmap = mmap(NULL, obj_ptr->file_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+    }
+    else obj_ptr->mmap = NULL;
   }
   return REDISMODULE_OK;
 }
@@ -1229,7 +1239,7 @@ void *MRdbLoad(RedisModuleIO *rdb, int encver)
   uint64_t writable = RedisModule_LoadUnsigned(rdb);
   obj_ptr->writable = (writable == 0 ? false : true);
   if (obj_ptr->writable) {
-    obj_ptr->fd = open(obj_ptr->file_path, O_CREAT | O_RDWR, S_IWRITE | S_IREAD);
+    obj_ptr->fd = open(obj_ptr->file_path, O_CREAT | O_RDWR, 0666);
   }
   else {
     obj_ptr->fd = open(obj_ptr->file_path, O_RDONLY);
@@ -1244,16 +1254,19 @@ void *MRdbLoad(RedisModuleIO *rdb, int encver)
     return NULL;
   }
   obj_ptr->file_size = sb.st_size;
-  if (obj_ptr->writable) {
-    obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+  if (0 < obj_ptr->file_size) {
+    if (obj_ptr->writable) {
+      obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+    }
+    else {
+      obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, obj_ptr->fd, 0);
+    }
+    if (obj_ptr->mmap == MAP_FAILED) {
+      MFree(obj_ptr);
+      return NULL;
+    }
   }
-  else {
-    obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, obj_ptr->fd, 0);
-  }
-  if (obj_ptr->mmap == MAP_FAILED) {
-    MFree(obj_ptr);
-    return NULL;
-  }
+  else obj_ptr->mmap = NULL;
   return obj_ptr;
 }
 
