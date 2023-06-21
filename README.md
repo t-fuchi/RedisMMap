@@ -1,7 +1,7 @@
 # RedisMMap
 mmap module for redis
 
-You can access values on a file with mmap in Redis.
+In the past, you would have to set up a script outside Redis to load data into Redis, which would then require all the data to be loaded into memory. Now, all you need to do is specify the file where the data is written, and since it’s read on-demand, it’s memory-friendly. 
 
 ## Install Redis
 [Instruction](https://redis.io/docs/getting-started/installation)
