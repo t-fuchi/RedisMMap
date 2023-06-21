@@ -8,6 +8,7 @@ In the past, you would have to set up a script outside Redis to load data into R
 
 ## Build module and setup redis.conf
 ```
+$ git clone https://github.com/t-fuchi/RedisMMap.git
 $ cd RedisMMap/src
 $ make
 $ sudo mv fmmap.so /etc/redis/
