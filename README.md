@@ -68,3 +68,69 @@ VTYPE key
 VSIZE key
 
 ```
+
+## Example
+```
+$ python3
+Python 3.7.2 (v3.7.2:9a3ffc0492, Dec 24 2018, 02:44:43) 
+[Clang 6.0 (clang-600.0.57)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import struct
+>>> with open('file.mmap', 'wb') as fout:
+...   for i in range(-100, 100):
+...     fout.write(struct.pack('d', i))
+^D
+
+$ ls -l file.mmap 
+-rw-r--r--  1 fuchi  staff  1600  6 22 03:39 file.mmap
+
+$ redis-cli
+127.0.0.1:6379> mmap db file.mmap double
+(integer) 200
+127.0.0.1:6379> vget db 0
+"-100"
+127.0.0.1:6379> vmget db 0 50 100 150 199
+1) "-100"
+2) "-50"
+3) "0"
+4) "50"
+5) "99"
+127.0.0.1:6379> vget db 200
+(error) index exceeds size
+127.0.0.1:6379> vset db 0 -1000
+(error) The file is not writable
+127.0.0.1:6379> del db
+(integer) 1
+127.0.0.1:6379> mmap db file.mmap double writable
+(integer) 200
+127.0.0.1:6379> vset db 0 -1000
+(integer) 1
+127.0.0.1:6379> vget db 0
+"-1000"
+127.0.0.1:6379> vadd db 500
+(integer) 1
+127.0.0.1:6379> vget db 200
+"500"
+127.0.0.1:6379> vtype db
+"double"
+127.0.0.1:6379> vsize db
+(integer) 8
+127.0.0.1:6379> vcount db
+(integer) 201
+127.0.0.1:6379> vfilepath db
+"file.mmap"
+127.0.0.1:6379> vpop db
+"500"
+127.0.0.1:6379> vcount db
+(integer) 200
+127.0.0.1:6379> vclear db
+(integer) 200
+127.0.0.1:6379> vcount db
+(integer) 0
+127.0.0.1:6379> vpop db
+(nil)
+127.0.0.1:6379> del db
+(integer) 1
+127.0.0.1:6379> ^D
+$
+```
