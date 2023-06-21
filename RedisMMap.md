@@ -12,28 +12,28 @@ I can't find the ability to read existing files in Redis. (Maybe I just don't kn
 Using this module, the following commands can be used in Redis.
 
 ```
-// Bind key to the file at file_path
+// This command binds key to the file at file_path.
 MMAP key file_path
 
-// Get a value at index position from key
+// This command gets a value at index position from key
 VGET key index
 
-// Obtain values at multiple index positions from key
+// This command gets values at multiple index positions from key
 VMGET key index [index ...]
 
-// Writes a value to the index position of key
+// This command writes values to the index positions of key
 VSET key index value [index value ...]
 
-// Add value to key
+// This command adds a value to key
 VADD key value [value ...]
 
-// Retrieve and delete the last value of key
+// This command retrieves and deletes the last value of key
 VPOP key
 
-// Get the number of values of key
+// This command gets the number of values of key
 VCOUNT key
 
-// Erase the contents of key
+// This command erases the contents of key
 VCLEAR key
 ```
 
