@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <strings.h>
 #include <string.h>
+#include <float.h>
 
 #include "redismodule.h"
 #include "sds.h"
@@ -141,7 +142,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       return RedisModule_ReplyWithError(ctx, "invalid value_size");
     }
   }
-  else if (mstringcmp(argv[3], "long double") == 0) {
+  else if (mstringcmp(argv[3], "long_double") == 0) {
     if (value_size == 0) value_size = 16;
     if (value_size != 16) {
       return RedisModule_ReplyWithError(ctx, "invalid value_size");
@@ -155,7 +156,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   }
   else {
     return RedisModule_ReplyWithError(
-      ctx, "value_type must be int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, or long double");
+      ctx, "value_type must be int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, or long_double");
   }
 
   RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
@@ -255,7 +256,7 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   }
 
   if (obj_ptr->file_size <= (size_t)index * obj_ptr->value_size || index < 0) {
-    RedisModule_ReplyWithNull(ctx);
+    return RedisModule_ReplyWithError(ctx, "index exceeds size.");
   }
   else {
     if (strcasecmp(obj_ptr->value_type, "int8") == 0) {
@@ -288,7 +289,7 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
       RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
     }
-    else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+    else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
       RedisModule_ReplyWithLongDouble(ctx, ((long double*)obj_ptr->mmap)[index]);
     }
     else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
@@ -319,16 +320,19 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     return RedisModule_ReplyWithError(ctx, "You must do MMAP first.");
   }
 
+  MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
+  if (obj_ptr == NULL) {
+    return REDISMODULE_ERR;
+  }
+
   long long index;
   for (int i = 2; i < argc; i += 2) {
     if (RedisModule_StringToLongLong(argv[i], &index) == REDISMODULE_ERR) {
       return RedisModule_ReplyWithError(ctx, "index argument must be integer.");
     }
-  }
-
-  MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
-  if (obj_ptr == NULL) {
-    return REDISMODULE_ERR;
+    if ((long long)obj_ptr->file_size <= index * obj_ptr->value_size || index < 0) {
+      return RedisModule_ReplyWithError(ctx, "index exceeds size.");
+    }
   }
 
   RedisModule_ReplyWithArray(ctx, argc - 2);
@@ -442,7 +446,7 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       }
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     for (int i = 2; i < argc; i++) {
       RedisModule_StringToLongLong(argv[i], &index);
       if (obj_ptr->file_size <= (size_t)index * obj_ptr->value_size || index < 0) {
@@ -546,7 +550,7 @@ int VAll_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     for (size_t index = 0; index < obj_ptr->file_size / obj_ptr->value_size; ++index) {
       RedisModule_ReplyWithLongDouble(ctx, ((long double*)obj_ptr->mmap)[index]);
     }
@@ -755,7 +759,7 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       *((double*)obj_ptr->mmap + index) = (double)value;
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     long double value;
     for (int i = 3; i < argc; i += 2) {
       if (RedisModule_StringToLongDouble(argv[i], &value) == REDISMODULE_ERR) {
@@ -983,6 +987,10 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
       if (RedisModule_StringToDouble(argv[i], &value) == REDISMODULE_ERR) {
         return RedisModule_ReplyWithError(ctx, "value must be float.");
       }
+      fprintf(stderr, "%d:%f %f %f\n", __LINE__, value, -FLT_MAX, FLT_MAX);
+      if (value < -FLT_MAX || FLT_MAX < value) {
+        return RedisModule_ReplyWithError(ctx, "value must be float.");
+      }
     }
     size_t new_size = obj_ptr->file_size + obj_ptr->value_size * (argc - 2);
     ftruncate(obj_ptr->fd, new_size);
@@ -996,9 +1004,12 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     }
   }
   else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
-    double value;
+    long double value;
     for (int i = 2; i < argc; ++i) {
-      if (RedisModule_StringToDouble(argv[i], &value) == REDISMODULE_ERR) {
+      if (RedisModule_StringToLongDouble(argv[i], &value) == REDISMODULE_ERR) {
+        return RedisModule_ReplyWithError(ctx, "value must be double.");
+      }
+      if (value < -DBL_MAX || DBL_MAX < value) {
         return RedisModule_ReplyWithError(ctx, "value must be double.");
       }
     }
@@ -1008,12 +1019,12 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     obj_ptr->mmap = mmap(NULL, new_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     for (int i = 2; i < argc; ++i) {
       size_t index = obj_ptr->file_size / obj_ptr->value_size;
-      RedisModule_StringToDouble(argv[i], &value);
+      RedisModule_StringToLongDouble(argv[i], &value);
       obj_ptr->file_size += obj_ptr->value_size;
       *((double*)obj_ptr->mmap + index) = (double)value;
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     long double value;
     for (int i = 2; i < argc; ++i) {
       if (RedisModule_StringToLongDouble(argv[i], &value) == REDISMODULE_ERR) {
@@ -1250,7 +1261,7 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     else if (strcasecmp(obj_ptr->value_type, "double") == 0) {
       RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
     }
-    else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+    else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
       RedisModule_ReplyWithLongDouble(ctx, ((long double*)obj_ptr->mmap)[index]);
     }
     else if (strcasecmp(obj_ptr->value_type, "string") == 0) {
@@ -1399,14 +1410,14 @@ void MAofRewrite(RedisModuleIO *aof, RedisModuleString *key, void *value)
       RedisModule_EmitAOF(aof, "MADD", "sbc", key, buffer);
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     for (size_t i = 0; i < obj_ptr->file_size; i += sizeof(long double)) {
       long double value = *(long double *)((uint8_t*)obj_ptr->mmap + i);
       sprintf(buffer, "%.16Lf", value);
       RedisModule_EmitAOF(aof, "MADD", "sbc", key, buffer);
     }
   }
-  else if (strcasecmp(obj_ptr->value_type, "long double") == 0) {
+  else if (strcasecmp(obj_ptr->value_type, "long_double") == 0) {
     for (size_t i = 0; i < obj_ptr->file_size; i += obj_ptr->value_size) {
       snprintf(buffer, obj_ptr->value_size + 1, "%s", (char*)obj_ptr->mmap + i);
       RedisModule_EmitAOF(aof, "MADD", "sbc", key, buffer);

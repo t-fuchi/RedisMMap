@@ -17,7 +17,7 @@ $ service redis-server start
 ```
 // mmap file_path to key
 // return number of values
-// value_type is int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, long double or string
+// value_type is int8, uint8, int16, uint16, int32, uint32, int64, uint64, float, double, long_double or string
 MMAP key file_path value_type [value_size] [writable]
 
 // clear contents in key (trancate file_path)
