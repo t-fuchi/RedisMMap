@@ -54,3 +54,6 @@ dkms.conf
 
 # rdb
 *.rdb
+
+__pycache__
+.vscode
