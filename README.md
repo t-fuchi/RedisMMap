@@ -8,9 +8,9 @@
 ```
 $ cd RedisMMap/src
 $ make
-$ mv fmmap.so /etc/redis/
-$ echo enable-module-command yes >> /etc/redis/redis.conf
-$ echo loadmodule /etc/redis/fmmap.so >> /etc/redis/redis.conf
+$ sudo mv fmmap.so /etc/redis/
+$ sudo echo enable-module-command yes >> /etc/redis/redis.conf
+$ sudo echo loadmodule /etc/redis/fmmap.so >> /etc/redis/redis.conf
 $ service redis-server start
 ```
 ## Usage
