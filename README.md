@@ -1,5 +1,7 @@
 # RedisMMap
- mmap module for redis
+mmap module for redis
+
+You can access values on a file with mmap in Redis.
 
 ## Install Redis
 [Instruction](https://redis.io/docs/getting-started/installation)
