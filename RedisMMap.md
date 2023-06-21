@@ -1,44 +1,44 @@
 <a href="https://colab.research.google.com/github/t-fuchi/RedisMMap/blob/main/RedisMMap.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-## Redisでmmapしたファイルから値を読み込むモジュールをGoogle Colabで作ってみた
+## I made a module with Google Colab to read values from mmapped files in Redis.
 
-Redisでは既存のファイルを読み込む機能が見当たりません。（寡聞にして知らないだけかもしれないので、知っていたら教えてください。）
+I can't find the ability to read existing files in Redis. (Maybe I just don't know it, so if you do, please let me know.) So I made a module that maps a file with double values written to it with mmap and reads/writes the values at specified locations from it. I've included the full code so that you can try it out by simply opening Colab from the button in the upper left corner and executing the cells in order. Please also refer to this as a way to create a Redis module.
 
-そこで、doubleの値を書き込んだファイルをmmapでマップして、そこから指定した位置の値を読み書きするモジュールを作ってみました。
 
-このモジュールを導入すると以下のコマンドが使えるようになります。
+
+
+
+
+Using this module, the following commands can be used in Redis.
 
 ```
-// file_pathにあるファイルをkeyに結びつける
+// Bind key to the file at file_path
 MMAP key file_path
 
-// keyの内容を消去する
-VCLEAR key
-
-// keyにvalueを追加する
-VADD key value [value ...]
-
-// keyからindex位置にある値を取得する
+// Get a value at index position from key
 VGET key index
 
-// keyから複数のindex位置にある値を取得する
+// Obtain values at multiple index positions from key
 VMGET key index [index ...]
 
-// keyのindex位置に値を書き込む
+// Writes a value to the index position of key
 VSET key index value [index value ...]
 
-// keyの値の数を取得する
-VSIZE key
+// Add value to key
+VADD key value [value ...]
 
-// keyの最後の値を取得して削除する
+// Retrieve and delete the last value of key
 VPOP key
+
+// Get the number of values of key
+VCOUNT key
+
+// Erase the contents of key
+VCLEAR key
 ```
 
 
-
-
-
-Redisのソースを取得して、モジュールのディレクトリに移動します。
+First, obtain the Redis source and change current directory to the module's one.
 
 
 ```python
@@ -48,22 +48,7 @@ Redisのソースを取得して、モジュールのディレクトリに移動
 %cd /content/redis-stable/src/modules
 ```
 
-    /content
-    --2023-06-17 11:21:40--  https://download.redis.io/redis-stable.tar.gz
-    Resolving download.redis.io (download.redis.io)... 45.60.121.1
-    Connecting to download.redis.io (download.redis.io)|45.60.121.1|:443... connected.
-    HTTP request sent, awaiting response... 200 OK
-    Length: 3068843 (2.9M) [application/octet-stream]
-    Saving to: ‘redis-stable.tar.gz’
-    
-    redis-stable.tar.gz 100%[===================>]   2.93M  --.-KB/s    in 0.1s    
-    
-    2023-06-17 11:21:40 (30.1 MB/s) - ‘redis-stable.tar.gz’ saved [3068843/3068843]
-    
-    /content/redis-stable/src/modules
-
-
-試しにサンプルのコードをmakeしてみましょう。
+Let's build the sample code.
 
 
 ```python
@@ -88,7 +73,7 @@ Redisのソースを取得して、モジュールのディレクトリに移動
     ld -o helloacl.so helloacl.xo -shared  -lc
 
 
-モジュールの.soファイルができました。
+Check if the module .so file has been created.
 
 
 ```python
@@ -99,13 +84,13 @@ Redisのソースを取得して、モジュールのディレクトリに移動
     helloblock.so  hellodict.so	hellotimer.so  helloworld.so
 
 
-それではfmmap.cにコードを書いていきましょう。読み書きする値はdoubleです。なおコードを見やすくするためにエラー処理は全て省いています。お試しになる場合は意地悪なコマンドを投入しないようお願いします😏
+Now let's write the code in fmmap.c. The value to be read/written is a double. Error handling has been omitted to make the code easier to read. If you try it, please do not submit any nasty commands.😏
 
-また、[こちら](https://)で公開しているコードでは読み書きする値の型を選べるようになっていて、エラー処理も完備しております。
+In addition, the code available [here](https://github.com/t-fuchi/RedisMMap) allows you to choose the type of value to read or write, and is complete with error handling.
 
 
 
-まずは必要なヘッダーのインクルードです。ちょっとした便利マクロも定義します。
+First, necessary headers and a convenience macro.
 
 
 ```python
@@ -127,19 +112,19 @@ Redisのソースを取得して、モジュールのディレクトリに移動
 #include "../sds.h"
 #include "../zmalloc.h"
 
-// (RedisModuleString *)と(char *)を比較するマクロ
+// A macro compare (RedisModuleString *) and (char *)
 static inline int mstringcmp(const RedisModuleString *rs1, const char *s2)
 {
   return strcasecmp(RedisModule_StringPtrLen(rs1, NULL), s2);
 }
 
-int ftruncate(int fildes, off_t length); // unistd.hにあるはずだがwarningが出るので
+int ftruncate(int fildes, off_t length); // It should be in unistd.h, but I get a warning.
 ```
 
     Writing fmmap.c
 
 
-MMapObjectを定義します。mmapに必要な情報を詰め込みました。sdsはRedis内で使われる文字列型です。
+Define MMapObject, packed with the information needed for mmap. sds is a string type used within Redis.
 
 
 ```python
@@ -157,15 +142,14 @@ typedef struct _MMapObject
     Appending to fmmap.c
 
 
-MMap型を保持する変数と、MMapObjectを生成する関数です。
+A variable to hold the MMap type and a function to generate the MMapObject.
 
 
 ```python
 %%writefile -a fmmap.c
 
-RedisModuleType *MMapType = NULL; // MMap型を保持する変数
+RedisModuleType *MMapType = NULL;
 
-// MMapObjectの生成
 MMapObject *MCreateObject(void)
 {
   return (MMapObject *)zcalloc(sizeof(MMapObject));
@@ -175,13 +159,12 @@ MMapObject *MCreateObject(void)
     Appending to fmmap.c
 
 
-MMapObjectを解放する関数です。
+Function to release MMapObject.
 
 
 ```python
 %%writefile -a fmmap.c
 
-// MMapObjectの解放
 void MFree(void *value)
 {
   if (value == NULL) return;
@@ -196,14 +179,11 @@ void MFree(void *value)
     Appending to fmmap.c
 
 
-file_pathで指定したファイルをkeyにマッピングする関数です。
+Function to map the file specified by file_path to key.
 
 
 ```python
 %%writefile -a fmmap.c
-
-#define S_IWRITE 0000200
-#define S_IREAD  0000400
 
 // MMAP key file_path
 int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
@@ -214,18 +194,19 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
   RedisModuleKey *key = RedisModule_OpenKey(ctx, argv[1], REDISMODULE_READ | REDISMODULE_WRITE);
 
+  // It confirms the type of key
   int type = RedisModule_KeyType(key);
   if (type != REDISMODULE_KEYTYPE_EMPTY &&
       RedisModule_ModuleTypeGetType(key) != MMapType) {
     return RedisModule_ReplyWithError(ctx, REDISMODULE_ERRORMSG_WRONGTYPE);
   }
 
-  // keyが空なら新たにmmapする
+  // It creates new file and mmap it if key is empty.
   MMapObject *obj_ptr;
   if (type == REDISMODULE_KEYTYPE_EMPTY) {
     obj_ptr = MCreateObject();
     obj_ptr->file_path = sdsnew(RedisModule_StringPtrLen(argv[2], NULL));
-    obj_ptr->fd = open(obj_ptr->file_path, O_RDWR | O_CREAT, S_IWRITE | S_IREAD);
+    obj_ptr->fd = open(obj_ptr->file_path, O_RDWR | O_CREAT, 0666);
     if (obj_ptr->fd == -1) {
         MFree(obj_ptr);
         return RedisModule_ReplyWithError(ctx, sdsnew(RedisModule_StringPtrLen(argv[2], NULL)));
@@ -237,13 +218,14 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     obj_ptr->mmap = mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
     RedisModule_ModuleTypeSetValue(key, MMapType, obj_ptr);
   }
+  // It confirms the file_path if key already exists.
   else {
     obj_ptr = RedisModule_ModuleTypeGetValue(key);
     if (obj_ptr == NULL) {
       RedisModule_ReplyWithNull(ctx);
       return REDISMODULE_ERR;
     }
-    // 既存のファイルと異なる場合はエラー
+    // Error if it is different from the existing file_path.
     if (strcmp(obj_ptr->file_path, RedisModule_StringPtrLen(argv[2], NULL)) != 0) {
       return RedisModule_ReplyWithError(ctx, "It is already mapped on another file.");
     }
@@ -257,7 +239,7 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-indexで示した位置の値を取得する関数です。
+Function to get the value at the position specified by index.
 
 
 ```python
@@ -276,9 +258,11 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
   MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
 
-  if (obj_ptr->file_size < (size_t)index * sizeof(double) || index < 0) {
+  // It returns Null if index is out of range.
+  if (obj_ptr->file_size <= (size_t)index * sizeof(double) || index < 0) {
     RedisModule_ReplyWithNull(ctx);
   }
+  // It returns mmap[index].
   else {
     RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
   }
@@ -289,7 +273,7 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-複数のindexで示した位置の値を取得する関数です。
+This function gets the values at the positions indicated by multiple indices.
 
 
 ```python
@@ -309,9 +293,11 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   for (int i = 2; i < argc; i++) {
     long long index;
     RedisModule_StringToLongLong(argv[i], &index);
-    if (obj_ptr->file_size < (size_t)index * sizeof(double) || index < 0) {
+    // It returns Null if index is out of range.
+    if (obj_ptr->file_size <= (size_t)index * sizeof(double) || index < 0) {
       RedisModule_ReplyWithNull(ctx);
     }
+    // It returns mmap[index].
     else {
       RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
     }
@@ -323,7 +309,7 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-indexで示した位置に値を書き込む関数です。
+This function writes values at the positions indicated by indeces.
 
 
 ```python
@@ -341,18 +327,25 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
   long long index;
   double value;
+  // It confirms the type of value written.
   for (int i = 3; i < argc; i += 2) {
     if (RedisModule_StringToDouble(argv[i], &value) == REDISMODULE_ERR) {
       return RedisModule_ReplyWithError(ctx, "value must be double.");
     }
   }
+  int n_factors = 0;
+  // It writes a value to mmap[index].
   for (int i = 2; i < argc; i += 2) {
     RedisModule_StringToLongLong(argv[i], &index);
-    RedisModule_StringToDouble(argv[i + 1], &value);
-    *((double*)obj_ptr->mmap + index) = (double)value;
+    // It writes a value if index is in range.
+    if (0 <= index && (size_t)index * sizeof(double) < obj_ptr->file_size) {
+      RedisModule_StringToDouble(argv[i + 1], &value);
+      ((double*)obj_ptr->mmap)[index] = (double)value;
+      ++n_factors;
+    }
   }
-
-  return RedisModule_ReplyWithLongLong(ctx, (argc - 2) / 2);
+  // It returns the number of writings.
+  return RedisModule_ReplyWithLongLong(ctx, n_factors);
 }
 
 ```
@@ -360,7 +353,7 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-ファイルの末尾に値を追加する関数です。
+This function appends values to the end of a file.
 
 
 ```python
@@ -376,11 +369,13 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
   MMapObject *obj_ptr = RedisModule_ModuleTypeGetValue(key);
   double value;
+  // It confirms the type of value added.
   for (int i = 2; i < argc; ++i) {
     if (RedisModule_StringToDouble(argv[i], &value) == REDISMODULE_ERR) {
       return RedisModule_ReplyWithError(ctx, "value must be double.");
     }
   }
+  // It extends mmap and write a value at the end of mmap.
   size_t new_size = obj_ptr->file_size + sizeof(double) * (argc - 2);
   ftruncate(obj_ptr->fd, new_size);
   munmap(obj_ptr->mmap, obj_ptr->file_size);
@@ -389,9 +384,10 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     size_t index = obj_ptr->file_size / sizeof(double);
     RedisModule_StringToDouble(argv[i], &value);
     obj_ptr->file_size += sizeof(double);
-    *((double*)obj_ptr->mmap + index) = (double)value;
+    ((double*)obj_ptr->mmap)[index] = (double)value;
   }
 
+  // It returns the number of elements added.
   return RedisModule_ReplyWithLongLong(ctx, argc - 2);
 }
 ```
@@ -399,14 +395,14 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-ファイルに含まれる値の数を取得する関数です。
+This function gets the number of values in a file.
 
 
 ```python
 %%writefile -a fmmap.c
 
-// VSIZE key
-int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
+// VCOUNT key
+int VCount_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
   RedisModule_AutoMemory(ctx); /* Use automatic memory management. */
 
@@ -422,7 +418,7 @@ int VSize_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-ファイルの内容を消去する関数です。
+This function erases the contents of a file.
 
 
 ```python
@@ -441,6 +437,7 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   munmap(obj_ptr->mmap, obj_ptr->file_size);
   ftruncate(obj_ptr->fd, 0);
   obj_ptr->mmap = mmap(NULL, 0, PROT_READ | PROT_WRITE, MAP_SHARED, obj_ptr->fd, 0);
+  RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / sizeof(double));
   obj_ptr->file_size = 0;
 
   return REDISMODULE_OK;
@@ -450,7 +447,7 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-ファイルの末尾から数値を取得して、削除する関数です。
+This function gets a value from the end of a file and delete it.
 
 
 ```python
@@ -470,7 +467,7 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     RedisModule_ReplyWithNull(ctx);
   }
   else {
-    size_t index = obj_ptr->file_size / sizeof(double);
+    size_t index = obj_ptr->file_size / sizeof(double) - 1;
     RedisModule_ReplyWithDouble(ctx, ((double*)obj_ptr->mmap)[index]);
     munmap(obj_ptr->mmap, obj_ptr->file_size);
     obj_ptr->file_size -= sizeof(double);
@@ -484,7 +481,7 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-RedisのRDBファイルにmmapに関する情報を保存する関数です。
+This function stores information about mmap in a Redis RDB file.
 
 
 ```python
@@ -501,7 +498,7 @@ void MRdbSave(RedisModuleIO *rdb, void *value)
     Appending to fmmap.c
 
 
-RedisのRDBファイルからmmapに関する情報を読み出す関数です。
+This function reads information about mmap from a Redis RDB file.
 
 
 ```python
@@ -525,7 +522,7 @@ void *MRdbLoad(RedisModuleIO *rdb, int encver)
     Appending to fmmap.c
 
 
-RedisのAOFを利用するための関数です。
+Function to use AOF in Redis.
 
 
 ```python
@@ -535,9 +532,7 @@ void MAofRewrite(RedisModuleIO *aof, RedisModuleString *key, void *value)
 {
   char buffer[0x200];
   MMapObject *obj_ptr = (MMapObject*)value;
-  RedisModule_EmitAOF(aof, "MMAP", "sc",
-                      key,
-                      obj_ptr->file_path);
+  RedisModule_EmitAOF(aof, "MMAP", "sc",key, obj_ptr->file_path);
   RedisModule_EmitAOF(aof, "MCLEAR", "ss", key, obj_ptr->file_path);
   for (size_t i = 0; i < obj_ptr->file_size; i += sizeof(double)) {
     double value = *(double *)((uint8_t*)obj_ptr->mmap + i);
@@ -550,7 +545,7 @@ void MAofRewrite(RedisModuleIO *aof, RedisModuleString *key, void *value)
     Appending to fmmap.c
 
 
-その他、Redisのモジュールに必要な関数です。
+Other functions required for Redis modules.
 
 
 ```python
@@ -572,7 +567,7 @@ void MDigest(RedisModuleDigest *md, void *value)
     Appending to fmmap.c
 
 
-Redisのコマンドを作成するマクロ
+Macro to create Redis commands
 
 
 ```python
@@ -591,7 +586,7 @@ Redisのコマンドを作成するマクロ
     Appending to fmmap.c
 
 
-モジュールのロード時に呼ばれて、モジュールを準備する関数です。ここで各コマンドとそれを実行する関数を結びつけます。
+This function is called at module load time to prepare the module. This is where each command is associated with the function that executes it.
 
 
 ```python
@@ -632,8 +627,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   // VSET key index value [index value ...]
   CREATE_CMD("VSET", VSet_RedisCommand, "write fast", 1, 1);
 
-  // VSIZE key
-  CREATE_CMD("VSIZE", VSize_RedisCommand, "readonly fast", 1, 1);
+  // VCOUNT key
+  CREATE_CMD("VCOUNT", VCount_RedisCommand, "readonly fast", 1, 1);
 
   // VPOP key
   CREATE_CMD("VPOP", VPop_RedisCommand, "write fast", 1, 1);
@@ -646,7 +641,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
     Appending to fmmap.c
 
 
-ソースをビルドするためのMakefileです。
+Makefile for building the source.
 
 
 ```python
@@ -674,7 +669,7 @@ clean:
     Writing Makefile.fmmap
 
 
-モジュールをmakeします。
+Let's build the module.
 
 
 ```python
@@ -687,7 +682,7 @@ clean:
     fmmap.so
 
 
-作成したモジュールを読み込めるように設定ファイルを準備します。
+Prepare a configuration file so that the created module can be loaded.
 
 
 ```python
@@ -704,7 +699,7 @@ loadmodule /content/redis-stable/src/modules/fmmap.so
     Appending to redis.conf
 
 
-Redisをインストールします。
+Install Redis.
 
 
 ```python
@@ -713,7 +708,7 @@ Redisをインストールします。
 !sudo apt-get install redis
 ```
 
-設定ファイルに書き込みます。
+Write something to the configuration file.
 
 
 ```python
@@ -725,7 +720,7 @@ loadmodule /content/redis-stable/src/modules/fmmap.so
     Appending to /etc/redis/redis.conf
 
 
-Redisを実行します。
+Run Redis.
 
 
 ```python
@@ -735,7 +730,7 @@ Redisを実行します。
     Starting redis-server: redis-server.
 
 
-Redisが実行されているか確認します。
+Check Redis running.
 
 
 ```python
@@ -743,10 +738,10 @@ Redisが実行されているか確認します。
 !ps aux | grep redis | grep -v grep
 ```
 
-    redis       4355  0.0  0.0  59132  6276 ?        Ssl  11:22   0:00 /usr/bin/redis-server 127.0.0.1:6379
+    redis       2680  0.0  0.0  59132  6392 ?        Ssl  15:58   0:00 /usr/bin/redis-server 127.0.0.1:6379
 
 
-ファイルを書き込む場所を準備します。
+Prepare the place to write a file.
 
 
 ```python
@@ -754,7 +749,7 @@ Redisが実行されているか確認します。
 !chmod 777 /content/db
 ```
 
-dbという名前でファイルをマップします。
+Maps a file to db. The return value is a number of values, 0 because it is new.
 
 
 ```python
@@ -764,7 +759,7 @@ dbという名前でファイルをマップします。
     (integer) 0
 
 
-ファイルができていることを確認します。まだファイルサイズは0です。
+Confirm that the file.mmap file has been created. The file size is still zero.
 
 
 ```python
@@ -772,20 +767,20 @@ dbという名前でファイルをマップします。
 ```
 
     total 0
-    -rw------- 1 redis redis 0 Jun 17 11:22 file.mmap
+    -rw-rw---- 1 redis redis 0 Jun 21 15:58 file.mmap
 
 
-値を追加してみます。
+Try to add a value. The return value is the number of values added.
 
 
 ```python
-!echo "VADD db 0.1" | redis-cli
+!echo "VADD db 0.0" | redis-cli
 ```
 
     (integer) 1
 
 
-ファイルサイズが8バイトに増えているのが確認できます。
+You can see that the file size has increased to 8 bytes.
 
 
 ```python
@@ -793,14 +788,15 @@ dbという名前でファイルをマップします。
 ```
 
     total 4
-    -rw------- 1 redis redis 4 Jun 17 11:22 file.mmap
+    -rw-rw---- 1 redis redis 8 Jun 21 15:58 file.mmap
 
 
-ファイルにコマンドを書き出して実行してみましょう。
+Write the command to a file and run it.
 
 
 ```python
 %%writefile command
+vadd db 0.1
 vadd db 0.2
 vadd db 0.3
 vadd db 0.4
@@ -809,62 +805,106 @@ vadd db 0.6
 vadd db 0.7
 vadd db 0.8
 vadd db 0.9
-vsize db
+vcount db
 ```
 
-実行すると、登録数が10になっているのがわかります。
+    Writing command
+
+
+When you run it, you will see that the number of registrations is 10.
 
 
 ```python
 !redis-cli < command
 ```
 
-ファイルも80バイトに増えています。
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 10
+
+
+The file has also increased to 80 bytes.
 
 
 ```python
 !ls -l /content/db
 ```
 
-いちコマンドで複数追加もできます。
+    total 4
+    -rw-rw---- 1 redis redis 80 Jun 21 15:58 file.mmap
+
+
+Multiple additions can be made with a single command. The number of values added is returned.
 
 
 ```python
 !echo "VADD db 1.0 1.1 1.2 1.3 1.4 1.5" | redis-cli
 ```
 
-値を取り出してみます。
+    (integer) 6
+
+
+Let's take out the value.
 
 
 ```python
 !echo "VGET db 5" | redis-cli
 ```
 
-複数の場合はこうなります。
+    "0.5"
+
+
+If there is more than one, it will look like this. There is an error because of floating point.
 
 
 ```python
 !echo "VMGET db 1 2 3 4 5" | redis-cli
 ```
 
-値を変更することもできます。
+    1) "0.10000000000000001"
+    2) "0.20000000000000001"
+    3) "0.29999999999999999"
+    4) "0.40000000000000002"
+    5) "0.5"
+
+
+You can also change the values: set db[5] to 50, db[10] to 100, etc. The return value of VSET is the number of locations you have changed.
 
 
 ```python
-!echo "VSET db 5 1,0 10 2,0" | redis-cli
-!echo "VMGET 1 5 10 15" | redis-cli
+!echo "VSET db 5 50 10 100" | redis-cli
+!echo "VMGET db 5 10" | redis-cli
 ```
 
-末尾の値を取り出して削除します。
+    (integer) 2
+    1) "50"
+    2) "100"
+
+
+Extracts and removes the trailing value.
 
 
 ```python
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
+!echo "VGET db 15" | redis-cli
 !echo "VPOP db" | redis-cli
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
 ```
 
-Redisを停止して再起動します。
+    (integer) 16
+    "1.5"
+    "1.5"
+    (integer) 15
+
+
+Stop and restart Redis.
 
 
 ```python
@@ -873,16 +913,20 @@ Redisを停止して再起動します。
 ```
 
     Stopping redis-server: redis-server.
+    Starting redis-server: redis-server.
 
 
-再起動しても値は残っています。
+The values remain after rebooting.
 
 
 ```python
-!echo "VSIZE db" | redis-cli
+!echo "VCOUNT db" | redis-cli
 ```
 
-dbを削除しても再度マッピングすればファイルは元のままなので値は残っています。
+    (integer) 15
+
+
+If you delete the db, you can re-map it and get the values since the file is still in its original state.
 
 
 ```python
@@ -891,32 +935,52 @@ dbを削除しても再度マッピングすればファイルは元のままな
 !echo "KEYS *" | redis-cli
 !ls -l /content/db/
 !echo "MMAP dba /content/db/file.mmap" | redis-cli
-!echo "VSIZE dba" | redis-cli
+!echo "VGET dba 5" | redis-cli
 ```
 
-内容をクリアします。
+    1) "db"
+    (integer) 1
+    (empty array)
+    total 4
+    -rw-rw---- 1 redis redis 120 Jun 21 15:58 file.mmap
+    (integer) 15
+    "50"
+
+
+To clear the contents, do this.
 
 
 ```python
 !echo "VCLEAR dba" | redis-cli
-!echo "VSEIZE dba" | redis-cli
+!echo "VCOUNT dba" | redis-cli
 ```
 
-ファイルのサイズが0になります。
+    (integer) 15
+    (integer) 0
+
+
+The size of the file will be zero.
 
 
 ```python
 !ls -l /content/db/
 ```
 
-dbaを削除します。
+    total 0
+    -rw-rw---- 1 redis redis 0 Jun 21 15:58 file.mmap
+
+
+Delete dba.
 
 
 ```python
 !echo "DEL dba" | redis-cli
 ```
 
-外部でファイルを作成します。
+    (integer) 1
+
+
+Create a file with 100 doubles written in Python.
 
 
 ```python
@@ -926,29 +990,46 @@ with open('/content/db/file.mmap', 'wb') as fout:
         fout.write(struct.pack('d', i))
 ```
 
-ファイルをマップして中身を確認します。
+Map the file and check the contents.
 
 
 ```python
 !echo "mmap db /content/db/file.mmap" | redis-cli
-!echo "vsize db" | redis-cli
+!echo "vcount db" | redis-cli
 !echo "vmget db 1 3 5 7 9" | redis-cli
 ```
 
-Redisを停止します。redis-serverは残っていません。
+    (integer) 100
+    (integer) 100
+    1) "1"
+    2) "3"
+    3) "5"
+    4) "7"
+    5) "9"
+
+
+Stop Redis. No redis-server remains.
 
 
 ```python
 !echo "shutdown" | redis-cli
 !sleep 1
-!ps aux | grep redis | grep -v grep
+!ps aux | grep redis
 ```
 
-ファイルは残っています。
+    root        2823  0.0  0.0   6904  3148 ?        S    15:58   0:00 /bin/bash -c ps aux | grep redis
+    root        2825  0.0  0.0   6444   724 ?        S    15:58   0:00 grep redis
+
+
+The file remains.
 
 
 ```python
 !ls -l /content/db
 ```
 
-以上です。
+    total 4
+    -rw-rw---- 1 redis redis 800 Jun 21 15:58 file.mmap
+
+
+That is all.
