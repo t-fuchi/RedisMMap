@@ -1,3 +1,5 @@
+<a href="https://colab.research.google.com/github/t-fuchi/RedisMMap/blob/main/RedisMMap.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 # RedisMMap
 mmap module for redis
 
