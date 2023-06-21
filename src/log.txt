@@ -1,0 +1,354 @@
+7148:C 21 Jun 2023 10:10:49.545 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7148:C 21 Jun 2023 10:10:49.545 # Redis version=7.0.4, bits=64, commit=00000000, modified=0, pid=7148, just started
+7148:C 21 Jun 2023 10:10:49.545 # Configuration loaded
+7148:M 21 Jun 2023 10:10:49.546 * Increased maximum number of open files to 10032 (it was originally set to 2560).
+7148:M 21 Jun 2023 10:10:49.546 * monotonic clock: POSIX clock_gettime
+7148:M 21 Jun 2023 10:10:49.546 * Running mode=standalone, port=6379.
+7148:M 21 Jun 2023 10:10:49.547 # WARNING: The TCP backlog setting of 511 cannot be enforced because kern.ipc.somaxconn is set to the lower value of 128.
+7148:M 21 Jun 2023 10:10:49.547 # Server initialized
+7148:M 21 Jun 2023 10:10:49.733 * Module 'FuchiMMap' loaded from fmmap.so
+7148:M 21 Jun 2023 10:10:49.733 * Ready to accept connections
+
+
+=== REDIS BUG REPORT START: Cut & paste starting from here ===
+7148:M 21 Jun 2023 10:10:50.547 # Redis 7.0.4 crashed by signal: 11, si_code: 1
+7148:M 21 Jun 2023 10:10:50.547 # Accessing address: 0x0
+7148:M 21 Jun 2023 10:10:50.547 # Crashed running the instruction at: 0x105eb7310
+
+------ STACK TRACE ------
+EIP:
+0   fmmap.so                            0x0000000105eb7310 VGet_RedisCommand + 832
+
+Backtrace:
+0   libsystem_platform.dylib            0x00007ff80f27fdfd _sigtramp + 29
+1   ???                                 0x00006000016ce1c0 0x0 + 105553140179392
+2   redis-server                        0x0000000105b95a9f RedisModuleCommandDispatcher + 175
+3   redis-server                        0x0000000105af52ae call + 286
+4   redis-server                        0x0000000105af66e6 processCommand + 2854
+5   redis-server                        0x0000000105b11a86 processInputBuffer + 358
+6   redis-server                        0x0000000105b09608 readQueryFromClient + 1144
+7   redis-server                        0x0000000105bc9056 connSocketEventHandler + 294
+8   redis-server                        0x0000000105aeac46 aeProcessEvents + 774
+9   redis-server                        0x0000000105aeaebd aeMain + 29
+10  redis-server                        0x0000000105afd8ab main + 2283
+11  dyld                                0x0000000112f9552e start + 462
+
+------ REGISTERS ------
+7148:M 21 Jun 2023 10:10:50.547 # 
+RAX:0000000000000000 RBX:00006000001f26f1
+RCX:0000000000000005 RDX:00007ff8509bcd20
+RDI:0000000000000000 RSI:0000000105ebc6ec
+RBP:00007ff7ba41d310 RSP:00007ff7ba41d1c0
+R8 :0000000000000130 R9 :0000000105aeeac4
+R10:0000000105badb70 R11:499980b518cd636a
+R12:0000600000dc15c0 R13:00007ff7ba41d320
+R14:0000000000000001 R15:0000000000000000
+RIP:0000000105eb7310 EFL:0000000000010246
+CS :000000000000002b FS:0000000000000000  GS:0000000000000000
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1cf) -> 00007ff80f14570e
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1ce) -> 00007ff7ba41d2f0
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1cd) -> 00007ff7ba41d240
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1cc) -> 00007ff7ba41d2d0
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1cb) -> 00007fda8e104480
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1ca) -> 00007fda8e104480
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c9) -> 00007ff7ba41d300
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c8) -> 00006000003dc740
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c7) -> 0000000105e9a000
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c6) -> 00007ff7ba41d220
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c5) -> 00007ff7ba41d2d0
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c4) -> 0000000105e9a000
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c3) -> 0000000000000000
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c2) -> 00007ff7ba41d230
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c1) -> 00007ff7ba41d240
+7148:M 21 Jun 2023 10:10:50.547 # (00007ff7ba41d1c0) -> 0005fd010ef4ed1f
+
+------ INFO OUTPUT ------
+# Server
+redis_version:7.0.4
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:14ad73d5ebb3c7bc
+redis_mode:standalone
+os:Darwin 21.6.0 x86_64
+arch_bits:64
+monotonic_clock:POSIX clock_gettime
+multiplexing_api:kqueue
+atomicvar_api:c11-builtin
+gcc_version:4.2.1
+process_id:7148
+process_supervised:no
+run_id:9b8e41770f3964975245d738008b20d1f36fae9c
+tcp_port:6379
+server_time_usec:1687309850547104
+uptime_in_seconds:1
+uptime_in_days:0
+hz:10
+configured_hz:10
+lru_clock:9588250
+executable:/Users/fuchi/Github/RedisMMap/src/redis-server
+config_file:/Users/fuchi/Github/RedisMMap/src/redis.conf
+io_threads_active:0
+
+# Clients
+connected_clients:1
+cluster_connections:0
+maxclients:10000
+client_recent_max_input_buffer:0
+client_recent_max_output_buffer:0
+blocked_clients:0
+tracking_clients:0
+clients_in_timeout_table:0
+
+# Memory
+used_memory:1512784
+used_memory_human:1.44M
+used_memory_rss:3350528
+used_memory_rss_human:3.20M
+used_memory_peak:1512784
+used_memory_peak_human:1.44M
+used_memory_peak_perc:100.16%
+used_memory_overhead:1188448
+used_memory_startup:1154144
+used_memory_dataset:324336
+used_memory_dataset_perc:90.43%
+allocator_allocated:1154288
+allocator_active:3318784
+allocator_resident:3318784
+total_system_memory:8589934592
+total_system_memory_human:8.00G
+used_memory_lua:31744
+used_memory_vm_eval:31744
+used_memory_lua_human:31.00K
+used_memory_scripts_eval:0
+number_of_cached_scripts:0
+number_of_functions:0
+number_of_libraries:0
+used_memory_vm_functions:32768
+used_memory_vm_total:64512
+used_memory_vm_total_human:63.00K
+used_memory_functions:216
+used_memory_scripts:216
+used_memory_scripts_human:216B
+maxmemory:0
+maxmemory_human:0B
+maxmemory_policy:noeviction
+allocator_frag_ratio:2.88
+allocator_frag_bytes:2164496
+allocator_rss_ratio:1.00
+allocator_rss_bytes:0
+rss_overhead_ratio:1.01
+rss_overhead_bytes:31744
+mem_fragmentation_ratio:2.90
+mem_fragmentation_bytes:2196240
+mem_not_counted_for_evict:0
+mem_replication_backlog:0
+mem_total_replication_buffers:0
+mem_clients_slaves:0
+mem_clients_normal:34016
+mem_cluster_links:0
+mem_aof_buffer:0
+mem_allocator:libc
+active_defrag_running:0
+lazyfree_pending_objects:0
+lazyfreed_objects:0
+
+# Persistence
+loading:0
+async_loading:0
+current_cow_peak:0
+current_cow_size:0
+current_cow_size_age:0
+current_fork_perc:0.00
+current_save_keys_processed:0
+current_save_keys_total:0
+rdb_changes_since_last_save:2
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1687309849
+rdb_last_bgsave_status:ok
+rdb_last_bgsave_time_sec:-1
+rdb_current_bgsave_time_sec:-1
+rdb_saves:0
+rdb_last_cow_size:0
+rdb_last_load_keys_expired:0
+rdb_last_load_keys_loaded:0
+aof_enabled:0
+aof_rewrite_in_progress:0
+aof_rewrite_scheduled:0
+aof_last_rewrite_time_sec:-1
+aof_current_rewrite_time_sec:-1
+aof_last_bgrewrite_status:ok
+aof_rewrites:0
+aof_rewrites_consecutive_failures:0
+aof_last_write_status:ok
+aof_last_cow_size:0
+module_fork_in_progress:0
+module_fork_last_cow_size:0
+
+# Stats
+total_connections_received:1
+total_commands_processed:30
+instantaneous_ops_per_sec:0
+total_net_input_bytes:1011
+total_net_output_bytes:411
+total_net_repl_input_bytes:0
+total_net_repl_output_bytes:0
+instantaneous_input_kbps:0.00
+instantaneous_output_kbps:0.00
+instantaneous_input_repl_kbps:0.00
+instantaneous_output_repl_kbps:0.00
+rejected_connections:0
+sync_full:0
+sync_partial_ok:0
+sync_partial_err:0
+expired_keys:0
+expired_stale_perc:0.00
+expired_time_cap_reached_count:0
+expire_cycle_cpu_milliseconds:0
+evicted_keys:0
+evicted_clients:0
+total_eviction_exceeded_time:0
+current_eviction_exceeded_time:0
+keyspace_hits:0
+keyspace_misses:0
+pubsub_channels:0
+pubsub_patterns:0
+pubsubshard_channels:0
+latest_fork_usec:0
+total_forks:0
+migrate_cached_sockets:0
+slave_expires_tracked_keys:0
+active_defrag_hits:0
+active_defrag_misses:0
+active_defrag_key_hits:0
+active_defrag_key_misses:0
+total_active_defrag_time:0
+current_active_defrag_time:0
+tracking_total_keys:0
+tracking_total_items:0
+tracking_total_prefixes:0
+unexpected_error_replies:0
+total_error_replies:8
+dump_payload_sanitizations:0
+total_reads_processed:31
+total_writes_processed:30
+io_threaded_reads_processed:0
+io_threaded_writes_processed:0
+reply_buffer_shrinks:0
+reply_buffer_expands:0
+
+# Replication
+role:master
+connected_slaves:0
+master_failover_state:no-failover
+master_replid:8c5792148422aa036397284aad03e55e33c27d94
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+
+# CPU
+used_cpu_sys:0.004021
+used_cpu_user:0.005450
+used_cpu_sys_children:0.000000
+used_cpu_user_children:0.000000
+
+# Modules
+module:name=FuchiMMap,ver=1,api=1,filters=0,usedby=[],using=[],options=[]
+
+# Commandstats
+cmdstat_VTYPE:calls=1,usec=2,usec_per_call=2.00,rejected_calls=0,failed_calls=0
+cmdstat_VADD:calls=4,usec=99,usec_per_call=24.75,rejected_calls=0,failed_calls=3
+cmdstat_VMGET:calls=1,usec=1,usec_per_call=1.00,rejected_calls=0,failed_calls=0
+cmdstat_VFILEPATH:calls=2,usec=4,usec_per_call=2.00,rejected_calls=0,failed_calls=0
+cmdstat_VSET:calls=4,usec=43,usec_per_call=10.75,rejected_calls=0,failed_calls=3
+cmdstat_VCLEAR:calls=2,usec=42,usec_per_call=21.00,rejected_calls=0,failed_calls=1
+cmdstat_VALL:calls=3,usec=6,usec_per_call=2.00,rejected_calls=0,failed_calls=0
+cmdstat_VSIZE:calls=1,usec=2,usec_per_call=2.00,rejected_calls=0,failed_calls=0
+cmdstat_VPOP:calls=2,usec=39,usec_per_call=19.50,rejected_calls=0,failed_calls=1
+cmdstat_VGET:calls=1,usec=3,usec_per_call=3.00,rejected_calls=0,failed_calls=0
+cmdstat_del:calls=3,usec=343,usec_per_call=114.33,rejected_calls=0,failed_calls=0
+cmdstat_VCOUNT:calls=3,usec=4,usec_per_call=1.33,rejected_calls=0,failed_calls=0
+cmdstat_MMAP:calls=3,usec=140,usec_per_call=46.67,rejected_calls=0,failed_calls=0
+
+# Errorstats
+errorstat_The:count=4
+errorstat_index:count=2
+errorstat_value:count=2
+
+# Latencystats
+latency_percentiles_usec_VTYPE:p50=2.007,p99=2.007,p99.9=2.007
+latency_percentiles_usec_VADD:p50=4.015,p99=89.087,p99.9=89.087
+latency_percentiles_usec_VMGET:p50=1.003,p99=1.003,p99.9=1.003
+latency_percentiles_usec_VFILEPATH:p50=2.007,p99=2.007,p99.9=2.007
+latency_percentiles_usec_VSET:p50=4.015,p99=24.063,p99.9=24.063
+latency_percentiles_usec_VCLEAR:p50=3.007,p99=39.167,p99.9=39.167
+latency_percentiles_usec_VALL:p50=2.007,p99=3.007,p99.9=3.007
+latency_percentiles_usec_VSIZE:p50=2.007,p99=2.007,p99.9=2.007
+latency_percentiles_usec_VPOP:p50=3.007,p99=36.095,p99.9=36.095
+latency_percentiles_usec_VGET:p50=3.007,p99=3.007,p99.9=3.007
+latency_percentiles_usec_del:p50=17.023,p99=317.439,p99.9=317.439
+latency_percentiles_usec_VCOUNT:p50=1.003,p99=2.007,p99.9=2.007
+latency_percentiles_usec_MMAP:p50=26.111,p99=89.087,p99.9=89.087
+
+# Cluster
+cluster_enabled:0
+
+# Keyspace
+db0:keys=1,expires=0,avg_ttl=0
+
+------ CLIENT LIST OUTPUT ------
+id=4 addr=[::1]:55046 laddr=[::1]:6379 fd=8 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 qbuf=29 qbuf-free=16861 argv-mem=7 multi-mem=0 rbs=16384 rbp=16384 obl=0 oll=0 omem=0 tot-mem=34047 events=r cmd=VGET user=default redir=-1 resp=2
+
+------ CURRENT CLIENT INFO ------
+id=4 addr=[::1]:55046 laddr=[::1]:6379 fd=8 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 ssub=0 multi=-1 qbuf=29 qbuf-free=16861 argv-mem=7 multi-mem=0 rbs=16384 rbp=16384 obl=0 oll=0 omem=0 tot-mem=34047 events=r cmd=VGET user=default redir=-1 resp=2
+argv[0]: '"vget"'
+argv[1]: '"db"'
+argv[2]: '"0"'
+7148:M 21 Jun 2023 10:10:50.547 # key 'db' found in DB containing the following object:
+7148:M 21 Jun 2023 10:10:50.547 # Object type: 5
+7148:M 21 Jun 2023 10:10:50.547 # Object encoding: 0
+7148:M 21 Jun 2023 10:10:50.547 # Object refcount: 1
+
+------ MODULES INFO OUTPUT ------
+
+------ CONFIG DEBUG OUTPUT ------
+lazyfree-lazy-user-flush no
+lazyfree-lazy-eviction no
+lazyfree-lazy-server-del no
+lazyfree-lazy-user-del no
+repl-diskless-sync yes
+slave-read-only yes
+repl-diskless-load disabled
+replica-read-only yes
+lazyfree-lazy-expire no
+activedefrag no
+proto-max-bulk-len 512mb
+sanitize-dump-payload no
+client-query-buffer-limit 1gb
+io-threads 1
+list-compress-depth 0
+io-threads-do-reads no
+
+------ DUMPING CODE AROUND EIP ------
+Symbol: VGet_RedisCommand (base: 0x105eb6fd0)
+Module: /Users/fuchi/Github/RedisMMap/src/fmmap.so (base 0x105eb6000)
+$ xxd -r -p /tmp/dump.hex /tmp/dump.bin
+$ objdump --adjust-vma=0x105eb6fd0 -D -b binary -m i386:x86-64 /tmp/dump.bin
+------
+7148:M 21 Jun 2023 10:10:50.547 # dump of function (hexdump of 960 bytes):
+554889e54157415641554154534881ec2801000089d34989f74989fd488b052d700000488b00488945d0ff1508b0000083fb03755c498b77084c89efba03000000ff1511b000004989c64889c7ff150db0000085c074684c89f7ff1508b00000483b05c9af00000f848a000000488b05dcaf0000488b0dd56f0000488b09483b4dd00f8575030000488d357d570000eb50488b05b86f0000488b00483b45d00f85580300004c89ef4881c4280100005b415c415d415e415f5dff2581af0000488b058aaf0000488b0d836f0000488b09483b4dd00f8523030000488d35935700004c89ef4881c4280100005b415c415d415e415f5dffe0498b7f10488db5c8feffffff1540af000083f8017518488d35785700004c89efff1533af00004189c6e9710200004c89f7ff1552af000041be010000004885c00f84590200004c8bbdc8feffff4d85ff0f88e30100004989c40fb64028490fafc749394424180f82cd010000498b5c2420488d35ad5500004889dfe81555000085c00f84bc010000488d359b5500004889dfe8fe54000085c00f84b1010000488d359d5500004889dfe8e754000085c00f84a6010000488d358c5500004889dfe8d054000085c00f849b010000488d357c5500004889dfe8b954000085c00f8490010000488d356b5500004889dfe8a254000085c00f848f010000488d355b5500004889dfe88b54000085c00f846d010000488d354a5500004889dfe87454000085c00f8456010000488d353a5500004889dfe85d54000085c00f8484010000488d35295500004889dfe84654000085c00f847e010000488d35195500004889dfe82f54000085c00f847d010000488d350e5500004889dfe81854000085c00f851a0100000f57c00f2945c00f2945b00f2945a00f2945900f2945800f298570ffffff0f298560ffffff0f298550ffffff0f298540ffffff0f298530ffffff0f298520ffffff0f298510ffffff0f298500ffffff0f2985f0feffff0f2985e0feffff0f2985d0feffff410fb67424284c0faffe4d037c24104c8d05b65500004531f64c8da5d0feffffb9000100004c89e731d24d89f931c0e82a530000488b1d8dad00004c89e7e8755300004c89ef4c89e64889c2ffd3eb664c89efff154fad0000eb58498b4424104a0fbe3438eb43498b442410420fb63438eb37498b4424104a0fbf3478eb2b498b442410420fb73478eb1f498b4424104a6334b8eb14498b4424104a8b34f8eb09498b442410428b34b84c89efff15fdac00004531f6488b05b36c0000488b00483b45d075574489f04881c4280100005b415c415d415e415f5dc3498b442410
+
+=== REDIS BUG REPORT END. Make sure to include from START to END. ===
+
+       Please report the crash by opening an issue on github:
+
+           http://github.com/redis/redis/issues
+
+  If a Redis module was involved, please open in the module's repo instead.
+
+  Suspect RAM error? Use redis-server --test-memory to verify it.
+
+  Some other issues could be detected by redis-server --check-system
