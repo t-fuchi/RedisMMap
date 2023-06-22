@@ -38,7 +38,7 @@ VCLEAR key
 ```
 
 
-First, obtain the Redis source and change current directory to the module's one.
+First, obtain the Redis source and change the current directory to module's one.
 
 
 ```python
