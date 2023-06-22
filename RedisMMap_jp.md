@@ -48,6 +48,21 @@ VCLEAR key
 %cd /content/redis-stable/src/modules
 ```
 
+    /content
+    --2023-06-22 06:05:23--  https://download.redis.io/redis-stable.tar.gz
+    Resolving download.redis.io (download.redis.io)... 45.60.121.1
+    Connecting to download.redis.io (download.redis.io)|45.60.121.1|:443... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 3068843 (2.9M) [application/octet-stream]
+    Saving to: ‘redis-stable.tar.gz’
+    
+    redis-stable.tar.gz 100%[===================>]   2.93M  13.6MB/s    in 0.2s    
+    
+    2023-06-22 06:05:23 (13.6 MB/s) - ‘redis-stable.tar.gz’ saved [3068843/3068843]
+    
+    /content/redis-stable/src/modules
+
+
 試しにサンプルのコードをmakeしてみましょう。
 
 
@@ -55,12 +70,34 @@ VCLEAR key
 !make
 ```
 
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c helloworld.c -o helloworld.xo
+    ld -o helloworld.so helloworld.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c hellotype.c -o hellotype.xo
+    ld -o hellotype.so hellotype.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c helloblock.c -o helloblock.xo
+    ld -o helloblock.so helloblock.xo -shared  -lpthread -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c hellocluster.c -o hellocluster.xo
+    ld -o hellocluster.so hellocluster.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c hellotimer.c -o hellotimer.xo
+    ld -o hellotimer.so hellotimer.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c hellodict.c -o hellodict.xo
+    ld -o hellodict.so hellodict.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c hellohook.c -o hellohook.xo
+    ld -o hellohook.so hellohook.xo -shared  -lc
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c helloacl.c -o helloacl.xo
+    ld -o helloacl.so helloacl.xo -shared  -lc
+
+
 モジュールの.soファイルができたか確認します。
 
 
 ```python
 !ls *.so
 ```
+
+    helloacl.so    hellocluster.so	hellohook.so   hellotype.so
+    helloblock.so  hellodict.so	hellotimer.so  helloworld.so
+
 
 それではfmmap.cにコードを書いていきましょう。読み書きする値はdoubleです。なおコードを見やすくするためにエラー処理は省いています。お試しになる場合は意地悪なコマンドを投入しないようお願いします😏
 
@@ -99,6 +136,9 @@ static inline int mstringcmp(const RedisModuleString *rs1, const char *s2)
 int ftruncate(int fildes, off_t length); // unistd.hにあるはずだがwarningが出るので
 ```
 
+    Writing fmmap.c
+
+
 MMapObjectを定義します。mmapに必要な情報を詰め込みました。sdsはRedis内で使われる文字列型です。
 
 
@@ -114,6 +154,9 @@ typedef struct _MMapObject
 } MMapObject;
 ```
 
+    Appending to fmmap.c
+
+
 MMap型を保持する変数と、MMapObjectを生成する関数です。
 
 
@@ -128,6 +171,9 @@ MMapObject *MCreateObject(void)
   return (MMapObject *)zcalloc(sizeof(MMapObject));
 }
 ```
+
+    Appending to fmmap.c
+
 
 MMapObjectを解放する関数です。
 
@@ -146,6 +192,9 @@ void MFree(void *value)
   zfree(value);
 }
 ```
+
+    Appending to fmmap.c
+
 
 file_pathで指定したファイルをkeyにマッピングする関数です。
 
@@ -204,6 +253,9 @@ int MMap_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
+    Appending to fmmap.c
+
+
 indexで指定する位置の値を取得する関数です。
 
 
@@ -234,6 +286,9 @@ int VGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
+
+    Appending to fmmap.c
+
 
 複数のindexで示した位置の値を取得する関数です。
 
@@ -267,6 +322,9 @@ int VMGet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
+
+    Appending to fmmap.c
+
 
 indexで示した位置に値を書き込む関数です。
 
@@ -309,6 +367,9 @@ int VSet_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
+    Appending to fmmap.c
+
+
 ファイルの末尾に値を追加する関数です。
 
 
@@ -348,6 +409,9 @@ int VAdd_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 }
 ```
 
+    Appending to fmmap.c
+
+
 ファイルに含まれる値の数を取得する関数です。
 
 
@@ -367,6 +431,9 @@ int VCount_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return RedisModule_ReplyWithLongLong(ctx, obj_ptr->file_size / sizeof(double));
 }
 ```
+
+    Appending to fmmap.c
+
 
 ファイルの内容を消去する関数です。
 
@@ -393,6 +460,9 @@ int VClear_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
   return REDISMODULE_OK;
 }
 ```
+
+    Appending to fmmap.c
+
 
 ファイルの末尾から数値を取得して、削除する関数です。
 
@@ -425,6 +495,9 @@ int VPop_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 }
 ```
 
+    Appending to fmmap.c
+
+
 RedisのRDBファイルにmmapに関する情報を保存する関数です。
 
 
@@ -438,6 +511,9 @@ void MRdbSave(RedisModuleIO *rdb, void *value)
   msync(obj_ptr->mmap, obj_ptr->file_size, MS_ASYNC);
 }
 ```
+
+    Appending to fmmap.c
+
 
 RedisのRDBファイルからmmapに関する情報を読み出す関数です。
 
@@ -459,6 +535,9 @@ void *MRdbLoad(RedisModuleIO *rdb, int encver)
   return obj_ptr;
 }
 ```
+
+    Appending to fmmap.c
+
 
 RedisのAOFを利用するための関数です。
 
@@ -482,6 +561,9 @@ void MAofRewrite(RedisModuleIO *aof, RedisModuleString *key, void *value)
 }
 ```
 
+    Appending to fmmap.c
+
+
 その他、Redisのモジュールに必要な関数です。
 
 
@@ -501,6 +583,9 @@ void MDigest(RedisModuleDigest *md, void *value)
 }
 ```
 
+    Appending to fmmap.c
+
+
 Redisのコマンドを作成するマクロ
 
 
@@ -516,6 +601,9 @@ Redisのコマンドを作成するマクロ
   } while (0);
 
 ```
+
+    Appending to fmmap.c
+
 
 モジュールのロード時に呼ばれて、モジュールを準備する関数です。ここで各コマンドとそれを実行する関数を結びつけます。
 
@@ -569,6 +657,9 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 
 ```
 
+    Appending to fmmap.c
+
+
 ソースをビルドするためのMakefileです。
 
 
@@ -594,6 +685,9 @@ clean:
 	rm -rf *.xo *.so
 ```
 
+    Writing Makefile.fmmap
+
+
 モジュールをmakeします。
 
 
@@ -602,19 +696,10 @@ clean:
 !ls fmmap.so
 ```
 
-作成したモジュールを読み込めるように設定ファイルを準備します。
+    cc -I.  -W -Wall -fno-common -g -ggdb -std=c99 -O2 -fPIC -c fmmap.c -o fmmap.xo
+    ld -o fmmap.so fmmap.xo -shared  -lc
+    fmmap.so
 
-
-```python
-!cp ../../redis.conf .
-```
-
-
-```python
-%%writefile -a redis.conf
-enable-module-command yes
-loadmodule /content/redis-stable/src/modules/fmmap.so
-```
 
 Redisをインストールします。
 
@@ -634,12 +719,18 @@ enable-module-command yes
 loadmodule /content/redis-stable/src/modules/fmmap.so
 ```
 
+    Appending to /etc/redis/redis.conf
+
+
 Redisを実行します。
 
 
 ```python
 !service redis-server start
 ```
+
+    Starting redis-server: redis-server.
+
 
 Redisが実行されているか確認します。
 
@@ -648,6 +739,9 @@ Redisが実行されているか確認します。
 !sleep 1
 !ps aux | grep redis | grep -v grep
 ```
+
+    redis       2830  0.0  0.0  59132  6452 ?        Ssl  06:05   0:00 /usr/bin/redis-server 127.0.0.1:6379
+
 
 ファイルを書き込む場所を準備します。
 
@@ -664,12 +758,19 @@ dbにファイルをマップします。戻り値は数値の数で、新規な
 !echo "MMAP db /content/db/file.mmap" | redis-cli
 ```
 
+    (integer) 0
+
+
 file.mmapファイルができていることを確認します。まだファイルサイズは0です。
 
 
 ```python
 !ls -l /content/db
 ```
+
+    total 0
+    -rw-rw---- 1 redis redis 0 Jun 22 06:05 file.mmap
+
 
 値を追加してみます。戻り値は追加した数値の数です。
 
@@ -678,12 +779,19 @@ file.mmapファイルができていることを確認します。まだファ�
 !echo "VADD db 0.0" | redis-cli
 ```
 
+    (integer) 1
+
+
 ファイルサイズが8バイトに増えているのが確認できます。
 
 
 ```python
 !ls -l /content/db
 ```
+
+    total 4
+    -rw-rw---- 1 redis redis 8 Jun 22 06:05 file.mmap
+
 
 コマンドをファイルに書き出して実行してみましょう。
 
@@ -702,12 +810,27 @@ vadd db 0.9
 vcount db
 ```
 
+    Writing command
+
+
 実行すると、登録数が10になっているのがわかります。
 
 
 ```python
 !redis-cli < command
 ```
+
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 1
+    (integer) 10
+
 
 ファイルも80バイトに増えています。
 
@@ -716,12 +839,19 @@ vcount db
 !ls -l /content/db
 ```
 
+    total 4
+    -rw-rw---- 1 redis redis 80 Jun 22 06:05 file.mmap
+
+
 ひとつのコマンドで複数追加もできます。追加した値の数が返ります。
 
 
 ```python
 !echo "VADD db 1.0 1.1 1.2 1.3 1.4 1.5" | redis-cli
 ```
+
+    (integer) 6
+
 
 値を取り出してみます。
 
@@ -730,12 +860,22 @@ vcount db
 !echo "VGET db 5" | redis-cli
 ```
 
+    "0.5"
+
+
 複数の場合はこうなります。浮動小数点なので誤差があります。
 
 
 ```python
 !echo "VMGET db 1 2 3 4 5" | redis-cli
 ```
+
+    1) "0.10000000000000001"
+    2) "0.20000000000000001"
+    3) "0.29999999999999999"
+    4) "0.40000000000000002"
+    5) "0.5"
+
 
 値を変更することもできます。db[5]に50、db[10]に100を設定します。VSETの戻り値は変更した箇所の数です。
 
@@ -744,6 +884,11 @@ vcount db
 !echo "VSET db 5 50 10 100" | redis-cli
 !echo "VMGET db 5 10" | redis-cli
 ```
+
+    (integer) 2
+    1) "50"
+    2) "100"
+
 
 末尾の値を取り出して削除します。
 
@@ -755,6 +900,12 @@ vcount db
 !echo "VCOUNT db" | redis-cli
 ```
 
+    (integer) 16
+    "1.5"
+    "1.5"
+    (integer) 15
+
+
 Redisを停止して再起動します。
 
 
@@ -763,12 +914,19 @@ Redisを停止して再起動します。
 !service redis-server start
 ```
 
+    Stopping redis-server: redis-server.
+    Starting redis-server: redis-server.
+
+
 再起動しても値は残っています。
 
 
 ```python
 !echo "VCOUNT db" | redis-cli
 ```
+
+    (integer) 15
+
 
 dbを削除しても再度マッピングすればファイルは元のままなので値を取得できます。
 
@@ -782,6 +940,15 @@ dbを削除しても再度マッピングすればファイルは元のままな
 !echo "VGET dba 5" | redis-cli
 ```
 
+    1) "db"
+    (integer) 1
+    (empty array)
+    total 4
+    -rw-rw---- 1 redis redis 120 Jun 22 06:05 file.mmap
+    (integer) 15
+    "50"
+
+
 内容をクリアするにはこうします。
 
 
@@ -790,6 +957,10 @@ dbを削除しても再度マッピングすればファイルは元のままな
 !echo "VCOUNT dba" | redis-cli
 ```
 
+    (integer) 15
+    (integer) 0
+
+
 ファイルのサイズが0になります。
 
 
@@ -797,12 +968,19 @@ dbを削除しても再度マッピングすればファイルは元のままな
 !ls -l /content/db/
 ```
 
+    total 0
+    -rw-rw---- 1 redis redis 0 Jun 22 06:05 file.mmap
+
+
 dbaを削除します。
 
 
 ```python
 !echo "DEL dba" | redis-cli
 ```
+
+    (integer) 1
+
 
 Pythonで100個のdoubleを書き込んだファイルを作成します。
 
@@ -823,6 +1001,15 @@ with open('/content/db/file.mmap', 'wb') as fout:
 !echo "vmget db 1 3 5 7 9" | redis-cli
 ```
 
+    (integer) 100
+    (integer) 100
+    1) "1"
+    2) "3"
+    3) "5"
+    4) "7"
+    5) "9"
+
+
 Redisを停止します。redis-serverは残っていません。
 
 
@@ -832,11 +1019,19 @@ Redisを停止します。redis-serverは残っていません。
 !ps aux | grep redis
 ```
 
+    root        2973  0.0  0.0   6904  3232 ?        S    06:05   0:00 /bin/bash -c ps aux | grep redis
+    root        2975  0.0  0.0   3292   508 ?        R    06:05   0:00 grep redis
+
+
 ファイルは残っています。
 
 
 ```python
 !ls -l /content/db
 ```
+
+    total 4
+    -rw-rw---- 1 redis redis 800 Jun 22 06:05 file.mmap
+
 
 以上です。

@@ -48,6 +48,21 @@ First, obtain the Redis source and change current directory to the module's one.
 %cd /content/redis-stable/src/modules
 ```
 
+    /content
+    --2023-06-22 06:07:59--  https://download.redis.io/redis-stable.tar.gz
+    Resolving download.redis.io (download.redis.io)... 45.60.121.1
+    Connecting to download.redis.io (download.redis.io)|45.60.121.1|:443... connected.
+    HTTP request sent, awaiting response... 200 OK
+    Length: 3068843 (2.9M) [application/octet-stream]
+    Saving to: ‘redis-stable.tar.gz’
+    
+    redis-stable.tar.gz 100%[===================>]   2.93M  --.-KB/s    in 0.06s   
+    
+    2023-06-22 06:07:59 (47.1 MB/s) - ‘redis-stable.tar.gz’ saved [3068843/3068843]
+    
+    /content/redis-stable/src/modules
+
+
 Let's build the sample code.
 
 
@@ -682,23 +697,6 @@ Let's build the module.
     fmmap.so
 
 
-Prepare a configuration file so that the created module can be loaded.
-
-
-```python
-!cp ../../redis.conf .
-```
-
-
-```python
-%%writefile -a redis.conf
-enable-module-command yes
-loadmodule /content/redis-stable/src/modules/fmmap.so
-```
-
-    Appending to redis.conf
-
-
 Install Redis.
 
 
@@ -738,7 +736,7 @@ Check Redis running.
 !ps aux | grep redis | grep -v grep
 ```
 
-    redis       2680  0.0  0.0  59132  6392 ?        Ssl  15:58   0:00 /usr/bin/redis-server 127.0.0.1:6379
+    redis       6204  0.0  0.0  59132  6420 ?        Ssl  06:08   0:00 /usr/bin/redis-server 127.0.0.1:6379
 
 
 Prepare the place to write a file.
@@ -767,7 +765,7 @@ Confirm that the file.mmap file has been created. The file size is still zero.
 ```
 
     total 0
-    -rw-rw---- 1 redis redis 0 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 0 Jun 22 06:08 file.mmap
 
 
 Try to add a value. The return value is the number of values added.
@@ -788,7 +786,7 @@ You can see that the file size has increased to 8 bytes.
 ```
 
     total 4
-    -rw-rw---- 1 redis redis 8 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 8 Jun 22 06:08 file.mmap
 
 
 Write the command to a file and run it.
@@ -838,7 +836,7 @@ The file has also increased to 80 bytes.
 ```
 
     total 4
-    -rw-rw---- 1 redis redis 80 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 80 Jun 22 06:08 file.mmap
 
 
 Multiple additions can be made with a single command. The number of values added is returned.
@@ -942,7 +940,7 @@ If you delete the db, you can re-map it and get the values since the file is sti
     (integer) 1
     (empty array)
     total 4
-    -rw-rw---- 1 redis redis 120 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 120 Jun 22 06:08 file.mmap
     (integer) 15
     "50"
 
@@ -967,7 +965,7 @@ The size of the file will be zero.
 ```
 
     total 0
-    -rw-rw---- 1 redis redis 0 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 0 Jun 22 06:08 file.mmap
 
 
 Delete dba.
@@ -1017,8 +1015,8 @@ Stop Redis. No redis-server remains.
 !ps aux | grep redis
 ```
 
-    root        2823  0.0  0.0   6904  3148 ?        S    15:58   0:00 /bin/bash -c ps aux | grep redis
-    root        2825  0.0  0.0   6444   724 ?        S    15:58   0:00 grep redis
+    root        6347  0.0  0.0   6904  3284 ?        S    06:08   0:00 /bin/bash -c ps aux | grep redis
+    root        6349  0.0  0.0   6444   728 ?        S    06:08   0:00 grep redis
 
 
 The file remains.
@@ -1029,7 +1027,7 @@ The file remains.
 ```
 
     total 4
-    -rw-rw---- 1 redis redis 800 Jun 21 15:58 file.mmap
+    -rw-rw---- 1 redis redis 800 Jun 22 06:08 file.mmap
 
 
 That is all.
